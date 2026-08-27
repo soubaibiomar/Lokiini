@@ -1,0 +1,220 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[a4paper, margin=2.2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{amsmath, amssymb}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, backgrounds, fit}
+
+\definecolor{primaryNavy}{RGB}{26, 54, 93}
+\definecolor{accentTeal}{RGB}{13, 148, 136}
+\definecolor{accentGold}{RGB}{217, 119, 6}
+\definecolor{darkSlate}{RGB}{30, 41, 59}
+\definecolor{lightBg}{RGB}{248, 250, 252}
+\definecolor{borderColor}{RGB}{226, 232, 240}
+
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{primaryNavy}}{\chaptertitlename\ \thechapter}{10pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{primaryNavy}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{accentTeal}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries\color{darkSlate}}{\thesubsubsection}{1em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{darkSlate}{\textbf{MatOS} --- Cadre Juridique, Réglementaire \& CNDP}}
+\fancyhead[R]{\small\textcolor{accentTeal}{\nouppercase{\leftmark}}}
+\fancyfoot[L]{\small\textcolor{gray}{Dossier Juridique Approfondi --- Droit Marocain (DOC, Lois 09-08, 53-05, 31-08)}}
+\fancyfoot[R]{\small\textcolor{darkSlate}{\textbf{Page \thepage\ sur \pageref{LastPage}}}}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\tcbset{
+  basebox/.style={
+    colback=lightBg,
+    colframe=borderColor,
+    boxrule=0.8pt,
+    arc=4pt,
+    left=10pt, right=10pt, top=8pt, bottom=8pt,
+    fonttitle=\bfseries\color{white}
+  },
+  execbox/.style={
+    basebox,
+    colback=primaryNavy!5,
+    colframe=primaryNavy,
+    title=Synthèse Juridique \& Qualification Légale
+  },
+  alertbox/.style={
+    basebox,
+    colback=accentGold!8,
+    colframe=accentGold,
+    title=Point de Vigilance Réglementaire
+  },
+  techbox/.style={
+    basebox,
+    colback=accentTeal!6,
+    colframe=accentTeal,
+    title=Article de Loi \& Fondement Juridique
+  }
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryNavy,
+    filecolor=accentTeal,      
+    urlcolor=accentTeal,
+    citecolor=primaryNavy,
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+    {\Huge\bfseries\color{primaryNavy} MatOS}\\[0.4cm]
+    {\LARGE\bfseries\color{accentTeal} Marketplace Universelle de Location de Matériel Sécurisée}\\[1.5cm]
+    
+    \rule{\linewidth}{1.8pt}\\[0.4cm]
+    {\huge\bfseries CADRE JURIDIQUE EXHAUSTIF, CONFORMITÉ CNDP\\\& PROTOCOLE DE CRÉATION DE SOCIÉTÉ AU MAROC}\\[0.3cm]
+    {\large Analyse Approfondie du DOC (Arts 627+), Loi 09-08 (Biométrie), Loi 53-05 (Signature), Loi 31-08 (Consommation) \& SARL-AU}\\[0.4cm]
+    \rule{\linewidth}{1.8pt}\\[2.2cm]
+    
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushleft} \large
+            \textbf{Auteur :}\\
+            Pôle Juridique \& Conformité\\
+            Équipe Fondatrice MatOS
+        \end{flushleft}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushright} \large
+            \textbf{Juridiction Applicable :}\\
+            Royaume du Maroc\\
+            \textbf{Date :} Août 2026
+        \end{flushright}
+    \end{minipage}
+    
+    \vfill
+    {\small Références : Secrétariat Général du Gouvernement (SGG), CNDP, OMPIC, CRI Maroc}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\begin{tcolorbox}[execbox]
+Le présent document détaille l'analyse juridique approfondie, le cadre contractuel et la stratégie de mise en conformité réglementaire de la plateforme \textbf{MatOS} sous l'empire du droit positif marocain.
+
+La sécurisation d'une marketplace de biens mobiliers repose sur une articulation rigoureuse de quatre corpus législatifs fondamentaux : le \textbf{Dahir des Obligations et Contrats (DOC)} régissant le louage de choses, la \textbf{Loi n° 09-08} encadrant les traitements de données à caractère personnel sous l'égide de la \textbf{CNDP}, la \textbf{Loi n° 53-05} (complétée par la \textbf{Loi n° 43-20}) conférant force probante à la signature électronique et aux états des lieux numériques, ainsi que la \textbf{Loi n° 31-08} édictant les mesures de protection du consommateur.
+\end{tcolorbox}
+
+\chapter{Qualification Contractuelle sous le DOC Marocain}
+
+\section{Le Contrat de Louage de Choses Mobilières (Arts 627 à 722)}
+En droit marocain, la mise à disposition onéreuse d'un bien meuble est régie par les dispositions du Dahir du 9 Ramadan 1331 formant Code des Obligations et Contrats :
+
+\begin{tcolorbox}[techbox]
+\textbf{Article 627 du DOC :} \textit{« Le louage de choses est un contrat par lequel l'une des parties cède à l'autre la jouissance d'une chose mobilière ou immobilière, pendant un certain temps, moyennant un prix déterminé que l'autre partie s'oblige à lui payer. »}
+\end{tcolorbox}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1.8cm and 2.5cm, auto, >=Latex, every node/.style={font=\scriptsize}]
+    \node[draw=primaryNavy, fill=primaryNavy!15, thick, rounded corners, minimum width=3.5cm, minimum height=1.3cm, align=center] (bailleur) {\textbf{Bailleur (Propriétaire)}\\Particulier ou Entreprise\\Mise à disposition du bien};
+    \node[draw=primaryNavy, fill=primaryNavy!15, thick, rounded corners, minimum width=3.5cm, minimum height=1.3cm, right=3.5cm of bailleur, align=center] (locataire) {\textbf{Locataire (Preneur)}\\Particulier ou Artisan\\Usage en « bon père de famille »};
+    
+    \node[draw=accentTeal, fill=accentTeal!15, thick, rounded corners, minimum width=4cm, minimum height=1.8cm, below=2cm of $(bailleur)!0.5!(locataire)$, align=center] (matos) {\textbf{MatOS (SARL-AU)}\\\textbf{Intermédiaire Technique (Modèle B)}\\• Vérification Biométrique KYC\\• Génération Contrat Numérique DOC\\• Séquestre Monétique CMI\\• Horodatage RFC 3161};
+
+    \draw[<->, very thick, primaryNavy] (bailleur) -- node[above, font=\scriptsize\bfseries] {Contrat de Louage Direct (Kiraa - DOC Arts 627+)} (locataire);
+    \draw[->, thick, dashed, accentTeal] (bailleur) -- node[left, font=\tiny] {Mandat d'encaissement \& CGU} (matos);
+    \draw[->, thick, dashed, accentTeal] (locataire) -- node[right, font=\tiny] {Service de confiance \& CGU} (matos);
+\end{tikzpicture}
+\caption{Schéma des relations contractuelles tripartites sous le modèle MatOS}
+\end{figure}
+
+\section{Responsabilité du Preneur \& Présomption de Faute (Art. 643 DOC)}
+En application de l'article 643 du DOC, le preneur est tenu de restituer la chose louée dans l'état où elle lui a été remise lors de la prise en charge. Toute dégradation constatée est présumée imputable au locataire, à charge pour lui d'établir la survenance d'un cas fortuit ou de force majeure (article 269 du DOC). L'état des lieux contradictoire horodaté RFC 3161 fournit la preuve matérielle irréfutable de l'état initial et final de l'objet.
+
+\chapter{Conformité Stricte à la Loi n° 09-08 (CNDP)}
+
+\section{Traitement de Données Biométriques \& Déclaration Préalable}
+La vérification de l'identité des utilisateurs par analyse faciale et comparaison avec la CIN marocaine implique le traitement de données à caractère personnel sensibles relevant de la supervision de la CNDP :
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1cm and 1.2cm, auto, >=Latex, every node/.style={font=\scriptsize}]
+    \node[draw=primaryNavy, fill=lightBg, rounded corners, minimum width=3cm, minimum height=1.2cm, align=center] (stream) {\textbf{1. Flux Vidéo Caméra}\\Mémoire Vive (RAM)\\Zéro écriture disque};
+    \node[draw=accentTeal, fill=lightBg, rounded corners, minimum width=3.2cm, minimum height=1.2cm, right=0.8cm of stream, align=center] (onnx) {\textbf{2. Inférence Vectorielle}\\Extraction Embedding\\512 Float32 normalisés};
+    \node[draw=accentGold, fill=lightBg, rounded corners, minimum width=3.2cm, minimum height=1.2cm, right=0.8cm of onnx, align=center] (purge) {\textbf{3. Purge Immédiate}\\Destruction du flux vidéo\\Conservation hash chiffré};
+
+    \draw[->, thick, primaryNavy] (stream) -- (onnx);
+    \draw[->, thick, accentTeal] (onnx) -- (purge);
+\end{tikzpicture}
+\caption{Cycle de vie Zero-Knowledge des données biométriques conforme CNDP}
+\end{figure}
+
+\section{Mesures Techniques \& Organisationnelles de Protection}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Principe de Minimisation :} Les flux vidéo bruts de la caméra ne sont jamais enregistrés sur des supports de stockage persistants. L'analyse de vivacité s'effectue dans un pipeline éphémère en mémoire vive.
+    \item \textbf{Chiffrement des Données au Repos :} Les numéros de CIN et les vecteurs d'embedding 512-D sont chiffrés en base de données selon l'algorithme AES-256 via l'extension \textit{pgcrypto}.
+    \item \textbf{Droit d'Accès et de Rectification (Articles 7 à 9) :} Tout utilisateur dispose d'un mécanisme in-app lui permettant de demander l'exportation intégrale de ses données ou leur suppression sous 30 jours, sous réserve des délais légaux de conservation comptable et probatoire.
+\end{itemize}
+
+\chapter{Preuve Numérique \& Protection du Consommateur}
+
+\section{Valeur Juridique de la Signature Électronique (Lois 53-05 \& 43-20)}
+Les contrats de location générés au format PDF et signés numériquement in-app par les deux parties possèdent la même force probante qu'un acte sous seing privé manuscrit :
+\begin{itemize}[leftmargin=*]
+    \item L'article 417-1 du DOC (introduit par la Loi 53-05) pose le principe d'équivalence entre l'écrit électronique et l'écrit papier, dès lors que la personne dont il émane peut être dûment identifiée et qu'il est établi et conservé dans des conditions de nature à en garantir l'intégrité.
+    \item L'empreinte SHA-256 et le jeton d'horodatage RFC 3161 constituent la preuve technique d'intégrité requise par la jurisprudence des tribunaux de commerce marocains.
+\end{itemize}
+
+\section{Droit de Rétractation \& Exceptions de l'Article 36 (Loi 31-08)}
+Bien que la Loi n° 31-08 prévoie un délai de rétractation de 7 jours pour les contrats conclus à distance, l'article 36 écarte expressément ce droit pour les prestations de services d'hébergement, de transport, de restauration ou de location de biens mobiliers fournies à une date ou selon une périodicité déterminée. Dès lors que la réservation est confirmée pour une date spécifique, le propriétaire est protégé contre les annulations abusives de dernière minute.
+
+\chapter{Procédure de Création de la Société (SARL-AU au CRI)}
+
+\section{Étapes Administratives \& Coûts d'Immatriculation}
+La structure juridique retenue pour l'exploitation de MatOS est la \textbf{Société à Responsabilité Limitée à Associé Unique (SARL-AU)}, régie par la Loi n° 5-96 :
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1cm and 1.2cm, auto, >=Latex, every node/.style={font=\scriptsize}]
+    \node[draw=primaryNavy, fill=lightBg, rounded corners, minimum width=2.8cm, minimum height=1.3cm, align=center] (e1) {\textbf{1. Certificat Négatif}\\OMPIC (En ligne)\\Coût : 230 MAD};
+    \node[draw=accentTeal, fill=lightBg, rounded corners, minimum width=2.8cm, minimum height=1.3cm, right=0.6cm of e1, align=center] (e2) {\textbf{2. Statuts \& Domicil.}\\Rédaction statuts\\Bail ou domiciliation};
+    \node[draw=accentGold, fill=lightBg, rounded corners, minimum width=2.8cm, minimum height=1.3cm, right=0.6cm of e2, align=center] (e3) {\textbf{3. Dépôt au CRI}\\Plateforme DirectEntreprise\\RC, IF, TP, CNSS, ICE};
+    \node[draw=primaryNavy, fill=accentTeal!20, thick, rounded corners, minimum width=2.8cm, minimum height=1.3cm, right=0.6cm of e3, align=center] (e4) {\textbf{4. Publication}\\Bulletin Officiel + Journal\\Immatriculation finale};
+
+    \draw[->, thick, primaryNavy] (e1) -- (e2);
+    \draw[->, thick, accentTeal] (e2) -- (e3);
+    \draw[->, thick, accentGold] (e3) -- (e4);
+\end{tikzpicture}
+\caption{Parcours chronologique d'immatriculation d'une SARL-AU auprès du CRI}
+\end{figure}
+
+Le coût global de constitution est estimé entre \textbf{3\,500 et 5\,000 MAD} pour un délai moyen d'obtention du modèle J de 5 à 10 jours ouvrés.
+
+\chapter*{Bibliographie \& Textes de Lois Officiels}
+\addcontentsline{toc}{chapter}{Bibliographie \& Textes de Lois Officiels}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Secrétariat Général du Gouvernement (Maroc) :} \textit{Dahir des Obligations et Contrats (DOC)}, Bulletin Officiel n° 46 du 12 septembre 1913.
+    \item \textbf{Royaume du Maroc :} \textit{Loi n° 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel}, Dahir n° 1-09-15 du 18 février 2009.
+    \item \textbf{Royaume du Maroc :} \textit{Loi n° 53-05 relative à l'échange électronique de données juridiques} \& \textit{Loi n° 43-20 relative aux services de confiance pour les transactions électroniques}.
+    \item \textbf{Royaume du Maroc :} \textit{Loi n° 31-08 édictant des mesures de protection du consommateur}, Dahir n° 1-11-03 du 18 février 2011.
+    \item \textbf{Royaume du Maroc :} \textit{Loi n° 5-96 sur la société en nom collectif, la société en commandite simple, la société en commandite par actions, la société à responsabilité limitée et la société en participation}.
+\end{enumerate}
+
+\end{document}

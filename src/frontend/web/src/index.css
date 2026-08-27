@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #F7F4EE;
+    color: #1E293B;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.badge-shadow {
+  box-shadow: 0 4px 12px rgba(15, 110, 86, 0.08);
+}

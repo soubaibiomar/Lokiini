@@ -1,0 +1,152 @@
+services:
+  # 1. Reverse Proxy Gateway
+  gateway:
+    image: nginx:alpine
+    container_name: lokiini-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+    networks:
+      - lokiini-network
+
+  # 2. Frontend Web Application (Next.js / React)
+  frontend:
+    build:
+      context: ./src/frontend/web
+      dockerfile: Dockerfile
+    container_name: lokiini-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - VITE_API_URL=http://localhost/api/v1
+      - NODE_ENV=development
+    volumes:
+      - ./src/frontend/web:/app
+      - /app/node_modules
+    networks:
+      - lokiini-network
+
+  # 3. Backend API (FastAPI / Python 3.11)
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    container_name: lokiini-backend
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://lokiini_user:lokiini_secure_pass_2026@postgres:5432/lokiini_db
+      - REDIS_URL=redis://redis:6379/0
+      - MEILISEARCH_URL=http://meilisearch:7700
+      - MEILISEARCH_MASTER_KEY=lokiini_meili_master_key_2026
+      - SECRET_KEY=lokiini_jwt_super_secret_key_morocco_2026_cndp
+      - ENVIRONMENT=development
+    volumes:
+      - ./src/backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lokiini-network
+
+  # 4. PostgreSQL 16 Database with pgcrypto
+  postgres:
+    image: postgres:16-alpine
+    container_name: lokiini-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=lokiini_user
+      - POSTGRES_PASSWORD=lokiini_secure_pass_2026
+      - POSTGRES_DB=lokiini_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lokiini_user -d lokiini_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lokiini-network
+
+  # 5. Redis 7 In-Memory Cache & Distributed Locks
+  redis:
+    image: redis:7-alpine
+    container_name: lokiini-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lokiini-network
+
+  # 6. Meilisearch Full-Text Search Engine
+  meilisearch:
+    image: getmeili/meilisearch:v1.8
+    container_name: lokiini-meilisearch
+    restart: unless-stopped
+    ports:
+      - "7700:7700"
+    environment:
+      - MEILI_MASTER_KEY=lokiini_meili_master_key_2026
+      - MEILI_ENV=development
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - lokiini-network
+
+  # 7. n8n Automation Engine (WhatsApp, CMI Reconcile, KYC Alerts)
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: lokiini-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=development
+      - WEBHOOK_URL=http://localhost/n8n/
+      - GENERIC_TIMEZONE=Africa/Casablanca
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./docker/n8n/workflows:/data/workflows
+    networks:
+      - lokiini-network
+
+networks:
+  lokiini-network:
+    name: lokiini-network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: lokiini_postgres_data
+  redis_data:
+    name: lokiini_redis_data
+  meili_data:
+    name: lokiini_meili_data
+  n8n_data:
+    name: lokiini_n8n_data
