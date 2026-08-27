@@ -67,9 +67,6 @@ export default function Hero({ selectedCity, setSelectedCity, selectedCategory, 
           <span className="text-xs font-bold text-stone-800">
             Le Tiers de Confiance de la Location de Matériel au Maroc
           </span>
-          <span className="hidden sm:inline-flex items-center gap-1 bg-teal-50 text-lokiini-teal font-extrabold text-[10px] tracking-wide uppercase px-2.5 py-0.5 rounded-full border border-teal-200">
-            Zéro Caution Cash
-          </span>
         </div>
 
         {/* Dynamic Hero Animated Heading */}
