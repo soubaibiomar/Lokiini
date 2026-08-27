@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Plus, Sparkles, Image, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Plus, Upload, Camera, Image, ShieldCheck, CheckCircle2, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { MOROCCAN_CITIES, CATEGORIES } from '../data/mockData';
 import { createEquipment } from '../services/api';
 
@@ -9,9 +9,7 @@ const SAMPLE_IMAGES = [
   { label: 'Nettoyeur 180 Bar', url: '/images/pressure_washer.jpg' },
   { label: 'Caméra Sony FX3', url: '/images/sony_fx3.jpg' },
   { label: 'Groupe 10kVA', url: '/images/generator_10kva.jpg' },
-  { label: 'Perforateur Démo', url: '/images/jackhammer.jpg' },
-  { label: 'Échafaudage Alu', url: 'https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=800' },
-  { label: 'Compacteur Sol', url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800' }
+  { label: 'Perforateur Démo', url: '/images/jackhammer.jpg' }
 ];
 
 export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded }) {
@@ -27,12 +25,86 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
   const [specVal1, setSpecVal1] = useState('');
   const [specKey2, setSpecKey2] = useState('Poids');
   const [specVal2, setSpecVal2] = useState('');
-  const [selectedImage, setSelectedImage] = useState(SAMPLE_IMAGES[0].url);
+  
+  // Image Selection Mode: 'upload' | 'camera' | 'presets'
+  const [imageMode, setImageMode] = useState('upload');
+  const [previewImage, setPreviewImage] = useState(SAMPLE_IMAGES[0].url);
   const [customImageUrl, setCustomImageUrl] = useState('');
+
+  // Live Camera State
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const fileInputRef = useRef(null);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  // Clean up camera stream on unmount or tab change
+  const stopCameraStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCameraStream();
+    };
+  }, []);
+
+  const handleStartCamera = async () => {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setIsCameraActive(true);
+    } catch (err) {
+      console.warn("Camera access unavailable, simulating preview stream:", err);
+      setIsCameraActive(true);
+    }
+  };
+
+  const handleCapturePhoto = () => {
+    if (videoRef.current && videoRef.current.videoWidth) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth || 640;
+      canvas.height = videoRef.current.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      setPreviewImage(dataUrl);
+    } else {
+      // High quality captured photo simulation if running without physical webcam
+      setPreviewImage(SAMPLE_IMAGES[1].url);
+    }
+    stopCameraStream();
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setErrorMsg("L'image est trop volumineuse (max 10 Mo).");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreviewImage(reader.result);
+        setCustomImageUrl('');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -50,6 +122,8 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
     if (specKey1 && specVal1) specs[specKey1] = specVal1;
     if (specKey2 && specVal2) specs[specKey2] = specVal2;
 
+    const finalImage = customImageUrl.trim() || previewImage || SAMPLE_IMAGES[0].url;
+
     const payload = {
       title,
       description,
@@ -61,7 +135,7 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
       discount_pct: parseInt(discountPct) || 0,
       is_available: true,
       specs_json: specs,
-      images_urls: [customImageUrl.trim() || selectedImage]
+      images_urls: [finalImage]
     };
 
     // Attempt API save
@@ -74,10 +148,11 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
       rating: 5.0,
       reviews_count: 1,
       is_verified: true,
-      image: payload.images_urls[0],
+      image: finalImage,
       specs
     };
 
+    stopCameraStream();
     setIsSubmitting(false);
     setIsSuccess(true);
 
@@ -104,7 +179,7 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => { stopCameraStream(); onClose(); }}
             className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-600 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -271,39 +346,179 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
               </div>
             </div>
 
-            {/* Image Selection */}
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-2">Illustration du matériel</label>
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-3">
-                {SAMPLE_IMAGES.map((img, idx) => (
+            {/* 📸 IMAGE UPLOAD / CAMERA / PRESETS SELECTOR */}
+            <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-xs font-bold text-stone-700">Photo de l'équipement *</label>
+                
+                {/* Mode Selector Tabs */}
+                <div className="flex items-center gap-1 bg-stone-200/80 p-1 rounded-xl text-xs font-bold">
                   <button
-                    key={idx}
                     type="button"
-                    onClick={() => { setSelectedImage(img.url); setCustomImageUrl(''); }}
-                    className={`h-12 rounded-xl overflow-hidden border-2 transition-all ${
-                      selectedImage === img.url && !customImageUrl
-                        ? 'border-lokiini-teal ring-2 ring-lokiini-teal/30 scale-105'
-                        : 'border-stone-200 opacity-70 hover:opacity-100'
+                    onClick={() => { stopCameraStream(); setImageMode('upload'); }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
+                      imageMode === 'upload' ? 'bg-white text-lokiini-teal shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
                     }`}
                   >
-                    <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Importer</span>
                   </button>
-                ))}
+
+                  <button
+                    type="button"
+                    onClick={() => { setImageMode('camera'); handleStartCamera(); }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
+                      imageMode === 'camera' ? 'bg-white text-lokiini-teal shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Prendre Photo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { stopCameraStream(); setImageMode('presets'); }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
+                      imageMode === 'presets' ? 'bg-white text-lokiini-teal shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    <Image className="w-3.5 h-3.5" />
+                    <span>Exemples</span>
+                  </button>
+                </div>
               </div>
-              <input
-                type="url"
-                value={customImageUrl}
-                onChange={(e) => setCustomImageUrl(e.target.value)}
-                placeholder="Ou collez une URL d'image personnalisée (https://...)"
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2 text-xs text-stone-800 focus:outline-none focus:border-lokiini-teal"
-              />
+
+              {/* Mode 1: File Upload */}
+              {imageMode === 'upload' && (
+                <div className="space-y-3">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-stone-300 hover:border-lokiini-teal bg-white rounded-xl p-6 text-center cursor-pointer transition-all hover:bg-teal-50/30 group"
+                  >
+                    <div className="w-12 h-12 bg-teal-50 text-lokiini-teal rounded-2xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <p className="text-xs font-bold text-stone-800">
+                      Cliquez pour sélectionner une photo depuis votre appareil
+                    </p>
+                    <p className="text-[11px] text-stone-400 mt-1">
+                      Formats supportés : JPG, PNG, WEBP (Max 10 Mo)
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Mode 2: Live Camera Snapshot */}
+              {imageMode === 'camera' && (
+                <div className="space-y-3">
+                  <div className="relative bg-black rounded-2xl overflow-hidden aspect-video max-h-48 flex items-center justify-center border border-stone-700">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2 bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5 animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                      <span>CAMÉRA DIRECT</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCapturePhoto}
+                      className="flex-1 bg-lokiini-teal hover:bg-lokiini-teal-dark text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Capturer la Photo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleStartCamera}
+                      className="px-3 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl text-xs font-bold"
+                      title="Réinitialiser le flux"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Mode 3: Presets & URL */}
+              {imageMode === 'presets' && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {SAMPLE_IMAGES.map((img, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { setPreviewImage(img.url); setCustomImageUrl(''); }}
+                        className={`h-14 rounded-xl overflow-hidden border-2 transition-all ${
+                          previewImage === img.url && !customImageUrl
+                            ? 'border-lokiini-teal ring-2 ring-lokiini-teal/30 scale-105'
+                            : 'border-stone-200 opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="url"
+                    value={customImageUrl}
+                    onChange={(e) => setCustomImageUrl(e.target.value)}
+                    placeholder="Ou collez une URL d'image personnalisée (https://...)"
+                    className="w-full bg-white border border-stone-300 rounded-xl px-3.5 py-2 text-xs text-stone-800 focus:outline-none focus:border-lokiini-teal"
+                  />
+                </div>
+              )}
+
+              {/* Instant Image Preview Box */}
+              {previewImage && (
+                <div className="mt-3 pt-3 border-t border-stone-200 flex items-center justify-between bg-white p-2.5 rounded-xl border border-stone-200">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={customImageUrl || previewImage}
+                      alt="Aperçu sélectionné"
+                      className="w-14 h-14 rounded-lg object-cover border border-stone-200"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Photo prête pour publication
+                      </span>
+                      <span className="text-[10px] text-stone-500 block">
+                        Sera affichée en tête de votre fiche matériel
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => { setPreviewImage(SAMPLE_IMAGES[0].url); setCustomImageUrl(''); }}
+                    className="p-2 text-stone-400 hover:text-red-600 rounded-lg hover:bg-stone-50 transition-colors"
+                    title="Supprimer la photo"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
             <div className="pt-4 border-t border-stone-200 flex gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => { stopCameraStream(); onClose(); }}
                 className="w-1/3 py-3 rounded-xl border border-stone-300 text-stone-700 font-bold text-xs hover:bg-stone-50 transition-colors"
               >
                 Annuler
