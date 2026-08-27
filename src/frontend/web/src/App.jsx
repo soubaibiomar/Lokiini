@@ -9,6 +9,8 @@ import AddEquipmentModal from './components/AddEquipmentModal';
 import InspectionModal from './components/InspectionModal';
 import ContractViewerModal from './components/ContractViewerModal';
 import AuthModal from './components/AuthModal';
+import GeoCitiesSection from './components/GeoCitiesSection';
+import FAQSection from './components/FAQSection';
 import { INITIAL_EQUIPMENT } from './data/mockData';
 import { getEquipmentList, getCurrentUser } from './services/api';
 import { ShieldCheck, Lock, FileText, PhoneCall } from 'lucide-react';
@@ -107,6 +109,25 @@ export default function App() {
     setCurrentUser(null);
   };
 
+  // Dynamic SEO & GEO Page Metadata
+  useEffect(() => {
+    let title = "Lokiini — N°1 Location de Matériel, Outillage & BTP au Maroc";
+    if (selectedCity && selectedCity !== 'Toutes les villes') {
+      title = `Location Matériel & BTP à ${selectedCity} — Lokiini Maroc`;
+    }
+    if (selectedCategory && selectedCategory !== 'all') {
+      const catNames = {
+        'btp': 'Engins BTP & Chantier',
+        'energie': 'Groupes Électrogènes & Énergie',
+        'audiovisuel': 'Matériel Audiovisuel & Cinéma',
+        'outillage': 'Outillage Professionnel',
+        'manutention': 'Levage & Manutention'
+      };
+      title = `${catNames[selectedCategory] || 'Location Matériel'} au Maroc — Lokiini`;
+    }
+    document.title = title;
+  }, [selectedCity, selectedCategory]);
+
   return (
     <div className="min-h-screen flex flex-col bg-lokiini-sand">
       
@@ -141,6 +162,18 @@ export default function App() {
               equipmentList={equipmentList}
               onSelectEquipment={handleSelectEquipment}
             />
+
+            {/* Moroccan Regional Hubs (GEO Targeting) */}
+            <GeoCitiesSection
+              selectedCity={selectedCity}
+              onSelectCity={(city) => {
+                setSelectedCity(city);
+                window.scrollTo({ top: 380, behavior: 'smooth' });
+              }}
+            />
+
+            {/* GEO Generative Engine Optimization & FAQ */}
+            <FAQSection />
           </>
         ) : (
           /* Pro Loueur Dashboard */
