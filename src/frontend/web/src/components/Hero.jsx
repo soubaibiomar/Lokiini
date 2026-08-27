@@ -59,16 +59,16 @@ export default function Hero({ selectedCity, setSelectedCity, selectedCategory, 
       <div className="max-w-6xl mx-auto text-center relative z-10">
         
         {/* Dynamic Live Moroccan Badge */}
-        <div className="inline-flex items-center gap-2 bg-white/90 border border-stone-200/80 px-4 py-1.5 rounded-full shadow-sm mb-6 backdrop-blur-md hover:scale-105 transition-transform cursor-default">
+        <div className="inline-flex items-center gap-2.5 bg-white/95 border border-stone-200/90 px-4 py-1.5 rounded-full shadow-sm mb-6 backdrop-blur-md hover:shadow-md hover:border-stone-300 transition-all cursor-default">
           <span className="flex h-2 w-2 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span className="text-xs font-bold text-stone-700">
-            Plateforme N°1 de Location B2B & Particuliers au Maroc 🇲🇦
+          <span className="text-xs font-bold text-stone-800">
+            N°1 de la Location de Matériel & BTP au Maroc
           </span>
-          <span className="hidden sm:inline-block bg-teal-50 text-lokiini-teal font-black text-[10px] uppercase px-2 py-0.5 rounded-md border border-teal-200">
-            Séquestre CMI
+          <span className="hidden sm:inline-flex items-center gap-1 bg-teal-50 text-lokiini-teal font-extrabold text-[10px] tracking-wide uppercase px-2.5 py-0.5 rounded-full border border-teal-200">
+            Caution CMI
           </span>
         </div>
 
