@@ -356,7 +356,7 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
                   <button
                     type="button"
                     onClick={() => { stopCameraStream(); setImageMode('upload'); }}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
+                    className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-all ${
                       imageMode === 'upload' ? 'bg-white text-lokiini-teal shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
                     }`}
                   >
@@ -367,23 +367,12 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
                   <button
                     type="button"
                     onClick={() => { setImageMode('camera'); handleStartCamera(); }}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
+                    className={`flex items-center gap-1 px-3 py-1 rounded-lg transition-all ${
                       imageMode === 'camera' ? 'bg-white text-lokiini-teal shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
                     }`}
                   >
                     <Camera className="w-3.5 h-3.5" />
                     <span>Prendre Photo</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => { stopCameraStream(); setImageMode('presets'); }}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
-                      imageMode === 'presets' ? 'bg-white text-lokiini-teal shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
-                    }`}
-                  >
-                    <Image className="w-3.5 h-3.5" />
-                    <span>Exemples</span>
                   </button>
                 </div>
               </div>
@@ -450,35 +439,6 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
                       <RefreshCw className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
-              )}
-
-              {/* Mode 3: Presets & URL */}
-              {imageMode === 'presets' && (
-                <div className="space-y-2">
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {SAMPLE_IMAGES.map((img, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => { setPreviewImage(img.url); setCustomImageUrl(''); }}
-                        className={`h-14 rounded-xl overflow-hidden border-2 transition-all ${
-                          previewImage === img.url && !customImageUrl
-                            ? 'border-lokiini-teal ring-2 ring-lokiini-teal/30 scale-105'
-                            : 'border-stone-200 opacity-70 hover:opacity-100'
-                        }`}
-                      >
-                        <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="url"
-                    value={customImageUrl}
-                    onChange={(e) => setCustomImageUrl(e.target.value)}
-                    placeholder="Ou collez une URL d'image personnalisée (https://...)"
-                    className="w-full bg-white border border-stone-300 rounded-xl px-3.5 py-2 text-xs text-stone-800 focus:outline-none focus:border-lokiini-teal"
-                  />
                 </div>
               )}
 
