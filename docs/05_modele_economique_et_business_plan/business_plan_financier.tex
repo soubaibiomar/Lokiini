@@ -1,0 +1,238 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[a4paper, margin=2.2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{amsmath, amssymb}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, backgrounds, fit}
+
+\definecolor{primaryNavy}{RGB}{26, 54, 93}
+\definecolor{accentTeal}{RGB}{13, 148, 136}
+\definecolor{accentGold}{RGB}{217, 119, 6}
+\definecolor{darkSlate}{RGB}{30, 41, 59}
+\definecolor{lightBg}{RGB}{248, 250, 252}
+\definecolor{borderColor}{RGB}{226, 232, 240}
+
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{primaryNavy}}{\chaptertitlename\ \thechapter}{10pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{primaryNavy}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{accentTeal}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries\color{darkSlate}}{\thesubsubsection}{1em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{darkSlate}{\textbf{MatOS} --- Modèle Économique \& Business Plan 36M}}
+\fancyhead[R]{\small\textcolor{accentTeal}{\nouppercase{\leftmark}}}
+\fancyfoot[L]{\small\textcolor{gray}{Dossier Financier Prévisionnel \& Modélisation Économique --- Maroc 2026--2029}}
+\fancyfoot[R]{\small\textcolor{darkSlate}{\textbf{Page \thepage\ sur \pageref{LastPage}}}}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\tcbset{
+  basebox/.style={
+    colback=lightBg,
+    colframe=borderColor,
+    boxrule=0.8pt,
+    arc=4pt,
+    left=10pt, right=10pt, top=8pt, bottom=8pt,
+    fonttitle=\bfseries\color{white}
+  },
+  execbox/.style={
+    basebox,
+    colback=primaryNavy!5,
+    colframe=primaryNavy,
+    title=Synthèse Exécutive Financière
+  },
+  alertbox/.style={
+    basebox,
+    colback=accentGold!8,
+    colframe=accentGold,
+    title=Indicateur Clé \& Seuil de Rentabilité
+  },
+  techbox/.style={
+    basebox,
+    colback=accentTeal!6,
+    colframe=accentTeal,
+    title=Unit Economics \& Métrique Clé
+  }
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryNavy,
+    filecolor=accentTeal,      
+    urlcolor=accentTeal,
+    citecolor=primaryNavy,
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+    {\Huge\bfseries\color{primaryNavy} MatOS}\\[0.4cm]
+    {\LARGE\bfseries\color{accentTeal} Marketplace Universelle de Location de Matériel Sécurisée}\\[1.5cm]
+    
+    \rule{\linewidth}{1.8pt}\\[0.4cm]
+    {\huge\bfseries MODÈLE ÉCONOMIQUE, BUSINESS PLAN PRÉVISIONNEL\\\& TRAJECTOIRE FINANCIÈRE À 36 MOIS}\\[0.3cm]
+    {\large Grille Tarifaire Dégressive, Compte de Résultat (P\&L), Analyse du Point Mort \& Valorisation}\\[0.4cm]
+    \rule{\linewidth}{1.8pt}\\[2.2cm]
+    
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushleft} \large
+            \textbf{Auteur :}\\
+            Direction Financière (CFO)\\
+            Comité d'Investissement MatOS
+        \end{flushleft}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushright} \large
+            \textbf{Devise de Référence :}\\
+            Dirham Marocain (MAD)\\
+            \textbf{Date :} Août 2026
+        \end{flushright}
+    \end{minipage}
+    
+    \vfill
+    {\small Référentiel Financier Conforme : Code Général des Impôts (CGI Maroc), Normes Comptables CGNC}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\begin{tcolorbox}[execbox]
+Le présent document expose la stratégie de monétisation, l'analyse des métriques unitaires (\textit{Unit Economics}) et le plan d'affaires prévisionnel à 36 mois de \textbf{MatOS}.
+
+Le modèle financier est fondé sur une architecture de revenus double associant un flux transactionnel (commissions dégressives de 15\% à 5\%) et un flux d'abonnements récurrents à haute marge (\textbf{Monthly Recurring Revenue - MRR}) via les offres Premium Particulier (49 MAD/mois) et Pro BTP (299 MAD/mois). Grâce à une structure de coûts fixes extrêmement maîtrisée permise par l'automatisation logicielle des vérifications biométriques et de la contractualisation, la plateforme atteint son point mort (\textbf{Break-Even}) dès le \textbf{9\ieme{} mois d'exploitation}, dégageant une marge d'EBITDA supérieure à 75\% dès l'Année 1.
+\end{tcolorbox}
+
+\chapter{Architecture du Modèle de Revenus \& Monétisation}
+
+\section{Le Moteur de Croissance Hybride (Flywheel Économique)}
+Les marketplaces de location d'objets peer-to-peer souffrent fréquemment d'une attrition du volume transactionnel lorsque les commissions sont perçues comme excessives par les utilisateurs. Pour neutraliser tout risque de contournement hors ligne, MatOS déploie un volant d'entraînement économique vertueux :
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1.5cm and 2.5cm, auto, >=Latex, every node/.style={font=\scriptsize}]
+    \node[draw=primaryNavy, fill=primaryNavy!15, thick, rounded corners, minimum width=4cm, minimum height=1.3cm, align=center] (com) {\textbf{1. Commissions Dégressives}\\15\% $\to$ 10\% $\to$ 7\% $\to$ 5\%\\Incitations fortes à la fidélité};
+    \node[draw=accentTeal, fill=accentTeal!15, thick, rounded corners, minimum width=4cm, minimum height=1.3cm, right=1.5cm of com, align=center] (sub) {\textbf{2. Abonnements Récurrents}\\Particulier : 49 MAD / mois\\Pro BTP : 299 MAD / mois};
+    \node[draw=accentGold, fill=accentGold!15, thick, rounded corners, minimum width=4.5cm, minimum height=1.3cm, below=1.5cm of $(com)!0.5!(sub)$, align=center] (services) {\textbf{3. Services à Valeur Ajoutée}\\Livraison coursier, Assurance tous risques,\\Mise en avant sponsorisée des annonces};
+
+    \draw[->, thick, primaryNavy] (com.east) -- node[above, font=\tiny] {Incitation à souscrire} (sub.west);
+    \draw[->, thick, accentTeal] (sub.south) -- node[right, font=\tiny] {Adoption des services} (services.north east);
+    \draw[->, thick, accentGold] (services.north west) -- node[left, font=\tiny] {Accélération du volume GMV} (com.south);
+\end{tikzpicture}
+\caption{Volant d'entraînement économique et flux de revenus hybrides MatOS}
+\end{figure}
+
+\section{Grille Tarifaire Détaillée \& Proposition de Valeur}
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{3.5cm} p{2.2cm} p{2.2cm} X}
+\toprule
+\textbf{Formule Tarifaire} & \textbf{Tarif Mensuel} & \textbf{Commission} & \textbf{Services \& Avantages Inclus} \\
+\midrule
+\textbf{Gratuit (Découverte)} & 0 MAD & 15\% & Dépôt illimité d'annonces, vérification standard sous 48h, support par ticket. \\
+\addlinespace
+\textbf{Premium Particulier} & 49 MAD / mois & 10\% & 1 livraison mensuelle offerte ($<15$ km), suppression caution cash, assurance jusqu'à 5\,000 MAD. \\
+\addlinespace
+\textbf{Pro BTP \& Événement} & 299 MAD / mois & 7\% & Multi-chantiers, facturation B2B déductible avec ICE, badge vérifié Pro, support téléphonique prioritaire. \\
+\addlinespace
+\textbf{Grands Comptes} & Sur devis & 5\% & Intégration API / ERP personnalisée, gestion de flottes multi-parcs et contrats cadres. \\
+\bottomrule
+\end{tabularx}
+\caption{Structure de l'offre commerciale et segmentation tarifaire MatOS}
+\end{table}
+
+\chapter{Analyse des Métriques Unitaires (Unit Economics)}
+
+\section{Valeur Vie Client (LTV) \& Coût d'Acquisition Client (CAC)}
+La rentabilité unitaire de la plateforme repose sur un ratio LTV / CAC particulièrement attractif, optimisé par le canal d'acquisition organique (référencement naturel Next.js et partage WhatsApp) :
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=0.9, every node/.style={font=\scriptsize}]
+    \draw[fill=primaryNavy!10, draw=primaryNavy, thick, rounded corners] (-4,-1.5) rectangle (-0.5,1.5);
+    \node[primaryNavy, font=\small\bfseries] at (-2.25,1) {Coût d'Acquisition (CAC)};
+    \node[align=center] at (-2.25,0) {\textbf{35 MAD}\\par utilisateur activé\\(Mix SEO, Salons \& Social Ads)};
+
+    \draw[fill=accentTeal!15, draw=accentTeal, thick, rounded corners] (0.5,-1.5) rectangle (4,1.5);
+    \node[accentTeal, font=\small\bfseries] at (2.25,1) {Valeur Vie Client (LTV)};
+    \node[align=center] at (2.25,0) {\textbf{420 MAD}\\sur une durée de 18 mois\\(Commissions + Abonnements)};
+
+    \draw[->, very thick, accentGold] (-0.5,0) -- node[above, font=\small\bfseries, color=accentGold] {Ratio : 12x} (0.5,0);
+\end{tikzpicture}
+\caption{Ratio LTV / CAC moyen sur le segment des utilisateurs actifs MatOS}
+\end{figure}
+
+Pour un panier moyen de location de \textbf{420 MAD} sur une durée moyenne de 2,5 jours, la marge brute unitaire dégagée par transaction s'établit à \textbf{58,80 MAD} pour le plan gratuit et \textbf{42,00 MAD} pour le plan Premium, pour un coût technique marginal par transaction (SMS OTP, inférence IA, stockage S3) inférieur à \textbf{3,50 MAD}.
+
+\chapter{Compte de Résultat Prévisionnel Consolidé à 36 Mois}
+
+\section{Tableau du P\&L Année 1, Année 2 et Année 3}
+Les projections financières intègrent une montée en charge progressive sur les 6 grandes métropoles marocaines :
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l r r r}
+\toprule
+\textbf{Ligne Financière (en MAD)} & \textbf{Année 1 (2026-27)} & \textbf{Année 2 (2027-28)} & \textbf{Année 3 (2028-29)} \\
+\midrule
+\textbf{Volume d'Affaires Brut (GMV)} & \textbf{4\,200\,000 MAD} & \textbf{14\,500\,000 MAD} & \textbf{38\,000\,000 MAD} \\
+Nombre de Transactions Traitées & 10\,000 & 34\,500 & 90\,500 \\
+Abonnés Premium Particuliers & 600 & 2\,200 & 5\,500 \\
+Abonnés Professionnels (Pro BTP) & 200 & 750 & 1\,800 \\
+\midrule
+\textbf{Chiffre d'Affaires Net Global} & \textbf{1\,188\,000 MAD} & \textbf{3\,986\,000 MAD} & \textbf{10\,710\,000 MAD} \\
+$\bullet$ Revenus Abonnements Récurrents & 715\,200 MAD & 2\,389\,200 MAD & 6\,458\,400 MAD \\
+$\bullet$ Revenus Commissions Transactions & 472\,800 MAD & 1\,596\,800 MAD & 4\,251\,600 MAD \\
+\midrule
+\textbf{Charges d'Exploitation (OpEx)} & \textbf{285\,000 MAD} & \textbf{760\,000 MAD} & \textbf{1\,850\,000 MAD} \\
+$\bullet$ Hébergement Cloud, SMS \& Inférence IA & 42\,000 MAD & 110\,000 MAD & 240\,000 MAD \\
+$\bullet$ Commissions Monétiques CMI (1,5\%) & 63\,000 MAD & 217\,500 MAD & 570\,000 MAD \\
+$\bullet$ Acquisition Marketing \& Salons Professionnels & 120\,000 MAD & 300\,000 MAD & 680\,000 MAD \\
+$\bullet$ Support Client, Juridique \& Frais Généraux & 60\,000 MAD & 132\,500 MAD & 360\,000 MAD \\
+\midrule
+\textbf{Excédent Brut d'Exploitation (EBITDA)} & \textbf{903\,000 MAD} & \textbf{3\,226\,000 MAD} & \textbf{8\,860\,000 MAD} \\
+\textbf{Marge d'EBITDA (\%)} & \textbf{76,0\%} & \textbf{80,9\%} & \textbf{82,7\%} \\
+\bottomrule
+\end{tabularx}
+\caption{Compte de résultat prévisionnel consolidé de MatOS (2026--2029)}
+\end{table}
+
+\chapter{Analyse du Point Mort \& Trajectoire de Trésorerie}
+
+\section{Calcul du Seuil de Rentabilité Opérationnelle (Break-Even Point)}
+Les charges fixes mensuelles de démarrage s'élevant à environ \textbf{18\,000 MAD / mois} (serveurs, SMS, nom de domaine, comptabilité, forfait juridique), le seuil de rentabilité est atteint dès que la plateforme cumule :
+\begin{equation}
+\text{Break-Even} = \frac{\text{Charges Fixes Mensuelles}}{\text{Marge Nette Moyenne par Transaction}} \approx \frac{18\,000\text{ MAD}}{45\text{ MAD}} = 400\text{ locations / mois}
+\end{equation}
+Ce volume correspond à seulement 14 transactions par jour sur l'ensemble de l'agglomération de Casablanca et de Rabat, un palier franchi dès le \textbf{9\ieme{} mois} de déploiement public.
+
+\chapter*{Bibliographie \& Références Financières}
+\addcontentsline{toc}{chapter}{Bibliographie \& Références Financières}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Direction Générale des Impôts (DGI Maroc) :} \textit{Code Général des Impôts (CGI)}, Dispositions relatives à la TVA de prestation de services et à l'Impôt sur les Sociétés (IS), 2025.
+    \item \textbf{Chen, A. (Andreessen Horowitz) :} \textit{The Cold Start Problem: How to Start and Scale Network Effects}, Harper Business, 2021.
+    \item \textbf{Centre Monétique Interbancaire (CMI) :} \textit{Barème des commissions d'interchange et d'acquisition e-commerce au Maroc}.
+    \item \textbf{Damodaran, A. (Stern School of Business) :} \textit{Valuing Multi-Sided Platforms and Subscription Businesses}, Working Paper Series.
+\end{enumerate}
+
+\end{document}

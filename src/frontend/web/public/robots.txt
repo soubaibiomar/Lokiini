@@ -1,0 +1,36 @@
+# Lokiini Robots.txt - SEO & GEO AI Crawler Directives
+User-agent: *
+Allow: /
+Allow: /images/
+Allow: /logo.png
+Allow: /favicon.png
+Disallow: /api/docs
+Disallow: /api/redoc
+Disallow: /n8n/
+Disallow: /admin/
+Disallow: /private/
+
+# AI Search Engines & Generative Crawlers (GEO Optimization)
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# Sitemap Location
+Sitemap: https://lokiini.ma/sitemap.xml

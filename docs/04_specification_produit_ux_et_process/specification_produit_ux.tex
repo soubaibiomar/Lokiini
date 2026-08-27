@@ -1,0 +1,233 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[a4paper, margin=2.2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{enumitem}
+\usepackage{amsmath, amssymb}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, backgrounds, fit}
+
+\definecolor{primaryNavy}{RGB}{26, 54, 93}
+\definecolor{accentTeal}{RGB}{13, 148, 136}
+\definecolor{accentGold}{RGB}{217, 119, 6}
+\definecolor{darkSlate}{RGB}{30, 41, 59}
+\definecolor{lightBg}{RGB}{248, 250, 252}
+\definecolor{borderColor}{RGB}{226, 232, 240}
+
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{primaryNavy}}{\chaptertitlename\ \thechapter}{10pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{primaryNavy}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{accentTeal}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries\color{darkSlate}}{\thesubsubsection}{1em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{darkSlate}{\textbf{MatOS} --- Spécification Produit, UX \& Médiation}}
+\fancyhead[R]{\small\textcolor{accentTeal}{\nouppercase{\leftmark}}}
+\fancyfoot[L]{\small\textcolor{gray}{Dossier Produit, Design System \& Gestion des Litiges --- Maroc 2026--2030}}
+\fancyfoot[R]{\small\textcolor{darkSlate}{\textbf{Page \thepage\ sur \pageref{LastPage}}}}
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\tcbset{
+  basebox/.style={
+    colback=lightBg,
+    colframe=borderColor,
+    boxrule=0.8pt,
+    arc=4pt,
+    left=10pt, right=10pt, top=8pt, bottom=8pt,
+    fonttitle=\bfseries\color{white}
+  },
+  execbox/.style={
+    basebox,
+    colback=primaryNavy!5,
+    colframe=primaryNavy,
+    title=Vision Produit \& Philosophie Ergonomique
+  },
+  alertbox/.style={
+    basebox,
+    colback=accentGold!8,
+    colframe=accentGold,
+    title=Matrice de Risque \& Décision UX
+  },
+  techbox/.style={
+    basebox,
+    colback=accentTeal!6,
+    colframe=accentTeal,
+    title=Standard d'Inspection \& Workflow
+  }
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryNavy,
+    filecolor=accentTeal,      
+    urlcolor=accentTeal,
+    citecolor=primaryNavy,
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+    {\Huge\bfseries\color{primaryNavy} MatOS}\\[0.4cm]
+    {\LARGE\bfseries\color{accentTeal} Marketplace Universelle de Location de Matériel Sécurisée}\\[1.5cm]
+    
+    \rule{\linewidth}{1.8pt}\\[0.4cm]
+    {\huge\bfseries SPÉCIFICATION PRODUIT, PARCOURS UTILISATEURS (UX)\\\& PROTOCOLE DE MÉDIATION DES LITIGES}\\[0.3cm]
+    {\large Philosophie de Friction Progressive, Écrans Clés, Matrice de Risque \& Workflow d'Arbitrage en 3 Niveaux}\\[0.4cm]
+    \rule{\linewidth}{1.8pt}\\[2.2cm]
+    
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushleft} \large
+            \textbf{Auteur :}\\
+            Direction Produit (CPO)\\
+            Pôle Design \& Expérience Utilisateur
+        \end{flushleft}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushright} \large
+            \textbf{Version :}\\
+            Spécification Produit v2.4\\
+            \textbf{Date :} Août 2026
+        \end{flushright}
+    \end{minipage}
+    
+    \vfill
+    {\small Référentiels : Nielsen Norman Group (Progressive Disclosure), Material Design 3, Protocoles CEMA}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\begin{tcolorbox}[execbox]
+Ce document présente les spécifications fonctionnelles, les parcours utilisateurs (User Journeys) et l'architecture d'expérience (UX) de l'écosystème \textbf{MatOS}. La conception de la plateforme résout la contradiction apparente entre deux impératifs : maximiser le taux de conversion lors de la découverte du service et garantir une sécurité transactionnelle sans faille lors de la passation de l'objet.
+
+En s'appuyant sur la méthodologie de la \textbf{friction progressive}, MatOS élimine toute barrière à l'entrée lors de la phase exploratoire (consultation ouverte du catalogue, recherche géolocalisée et comparatif tarifaire) pour ne déclencher les vérifications d'identité biométriques et les engagements contractuels qu'au moment opportun de la finalisation de la réservation.
+\end{tcolorbox}
+
+\chapter{Philosophie UX \& Parcours de Friction Progressive}
+
+\section{Le Modèle de Divulgation Progressive (Progressive Disclosure)}
+Sur les plateformes numériques transactionnelles, l'imposition prématurée de formulaires d'identification lourds engendre un taux d'abandon supérieur à 65\% (*Nielsen Norman Group*). Pour maximiser la liquidité de la marketplace tout en garantissant un contrôle rigoureux, MatOS déploie un tunnel d'engagement en 4 étapes :
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=0.9, every node/.style={font=\scriptsize}]
+    % Funnel stages
+    \draw[fill=primaryNavy!15, draw=primaryNavy, thick] (-4,3) -- (4,3) -- (3,1.8) -- (-3,1.8) -- cycle;
+    \node at (0,2.4) {\textbf{1. Découverte \& Recherche Publique (Friction Zéro)}};
+    \node[gray] at (0,2.05) {Consultation du catalogue, filtres de géolocalisation, prix sans aucun compte requis};
+
+    \draw[fill=accentTeal!20, draw=accentTeal, thick] (-3,1.6) -- (3,1.6) -- (2,0.4) -- (-2,0.4) -- cycle;
+    \node at (0,1.0) {\textbf{2. Réservation \& KYC Déclenché au Just-in-Time}};
+    \node[gray] at (0,0.65) {Saisie du numéro mobile + OTP WhatsApp/SMS, scan CIN + selfie liveness en 45 secondes};
+
+    \draw[fill=accentGold!20, draw=accentGold, thick] (-2,0.2) -- (2,0.2) -- (1,-1) -- (-1,-1) -- cycle;
+    \node at (0,-0.4) {\textbf{3. Remise en Main Propre \& État des Lieux}};
+    \node[gray] at (0,-0.75) {4 photos obligatoires guidées par réalité augmentée + scellement cryptographique SHA-256};
+
+    \draw[fill=primaryNavy!30, draw=primaryNavy, thick] (-1,-1.2) -- (1,-1.2) -- (0.6,-2.2) -- (-0.6,-2.2) -- cycle;
+    \node at (0,-1.7) {\textbf{4. Restitution \& Libération Séquestre}};
+\end{tikzpicture}
+\caption{Entonnoir de conversion et parcours utilisateur de friction progressive MatOS}
+\end{figure}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Étape 1 --- Découverte Libre (Friction Zéro) :} L'utilisateur navigue librement sur le site ou l'application. La géolocalisation PostGIS affiche immédiatement les matériels disponibles autour de lui. Aucune création de compte n'est exigée.
+    \item \textbf{Étape 2 --- Validation de Réservation (Authentification Téléphone) :} Au clic sur « Réserver », l'utilisateur saisit son numéro de téléphone et valide un code OTP reçu instantanément via WhatsApp ou SMS.
+    \item \textbf{Étape 3 --- Première Location (Contrôle Biométrique Just-in-Time) :} Si l'utilisateur n'a jamais loué, l'interface déclenche le module d'analyse CIN et le test de vivacité faciale caméra (durée totale : 45 secondes).
+    \item \textbf{Étape 4 --- Transaction Scellée \& Restitution :} Le contrat DOC est signé électroniquement, la pré-autorisation bancaire CMI est validée, et l'état des lieux horodaté est scellé par empreinte RFC 3161.
+\end{enumerate}
+
+\chapter{Matrice Dynamique de Risque \& Niveaux de Vérification}
+
+\section{Classification des Objets selon la Valeur Marchande}
+Tous les équipements ne présentent pas la même exposition au risque. MatOS applique une matrice de sécurité adaptative à trois niveaux :
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{2.8cm} p{3.2cm} p{3.8cm} X}
+\toprule
+\textbf{Niveau de Risque} & \textbf{Valeur de Remplacement} & \textbf{Exigences de Sécurité} & \textbf{Protocole d'État des Lieux} \\
+\midrule
+\textbf{Niveau 1 (Faible)} & $< 1\,500$ MAD & Numéro de téléphone vérifié (OTP) + Carte bancaire active. & 2 photos globales recommandées (entrée/sortie). \\
+\addlinespace
+\textbf{Niveau 2 (Moyen)} & $1\,500$ à $10\,000$ MAD & Scan CIN complet + Liveness check facial actif. & 4 photos guidées obligatoires + Horodatage RFC 3161. \\
+\addlinespace
+\textbf{Niveau 3 (Élevé)} & $> 10\,000$ MAD & KYC biométrique certifié + Pré-autorisation caution CMI. & 8 photos haute définition guidées (détails \& numéros de série). \\
+\bottomrule
+\end{tabularx}
+\caption{Matrice dynamique d'exigences de sécurité en fonction de la valeur de l'objet}
+\end{table}
+
+\chapter{Protocole d'État des Lieux Guidé \& Scellement AR}
+
+\section{Guidage Visuel par Réalité Augmentée}
+Pour éviter les photos floues, sombres ou non exploitables, l'application mobile Flutter superpose un gabarit visuel semi-transparent (\textit{AR bounding box}) sur l'écran du smartphone :
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1.2cm and 1.5cm, auto, >=Latex, every node/.style={font=\scriptsize}]
+    \node[draw=primaryNavy, fill=lightBg, rounded corners, minimum width=3cm, minimum height=1.3cm, align=center] (ar) {\textbf{1. Gabarit AR Guidé}\\Cadrage automatique\\Contrôle de netteté};
+    \node[draw=accentTeal, fill=lightBg, rounded corners, minimum width=3.2cm, minimum height=1.3cm, right=0.8cm of ar, align=center] (hash) {\textbf{2. Hachage SHA-256}\\Signature cryptographique\\Exifs GPS inviolables};
+    \node[draw=accentGold, fill=lightBg, rounded corners, minimum width=3.2cm, minimum height=1.3cm, right=0.8cm of hash, align=center] (tsp) {\textbf{3. Sceau RFC 3161}\\Autorité d'horodatage\\Dossier probatoire};
+
+    \draw[->, thick, primaryNavy] (ar) -- (hash);
+    \draw[->, thick, accentTeal] (hash) -- (tsp);
+\end{tikzpicture}
+\caption{Workflow d'inspection certifiée et scellement probatoire de l'état du matériel}
+\end{figure}
+
+L'algorithme analyse la luminosité ambiante, la mise au point et l'alignement de l'objet. Dès que les conditions de prise de vue sont validées, le cliché est capturé en haute définition avec extraction des coordonnées géodésiques et calcul instantané de l'empreinte SHA-256.
+
+\chapter{Protocole de Médiation des Litiges en 3 Niveaux}
+
+\section{Workflow d'Escalade Temporelle ($T_0$ à $T_{96\text{h}}$)}
+En cas de désaccord lors de la restitution (rayure constatée, composant manquant, retard injustifié), le dossier bascule automatiquement dans le module de médiation :
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[node distance=1cm and 1.2cm, auto, >=Latex, every node/.style={font=\scriptsize}]
+    \node[draw=primaryNavy, fill=lightBg, rounded corners, minimum width=3cm, minimum height=1.3cm, align=center] (lvl1) {\textbf{Niveau 1 ($T_0$--$T_{24\text{h}}$)}\\Constat Amiable In-App\\Photos comparatives côte à côte};
+    \node[draw=accentTeal, fill=lightBg, rounded corners, minimum width=3.4cm, minimum height=1.3cm, right=0.8cm of lvl1, align=center] (lvl2) {\textbf{Niveau 2 ($T_{24\text{h}}$--$T_{72\text{h}}$)}\\Arbitrage Support MatOS\\Analyse technique \& Devis réparateur};
+    \node[draw=accentGold, fill=lightBg, rounded corners, minimum width=3.2cm, minimum height=1.3cm, right=0.8cm of lvl2, align=center] (lvl3) {\textbf{Niveau 3 ($>T_{72\text{h}}$)}\\Assurance Partenaire\\Indemnisation sinistre lourde};
+
+    \draw[->, thick, primaryNavy] (lvl1) -- node[above, font=\tiny] {Échec} (lvl2);
+    \draw[->, thick, accentTeal] (lvl2) -- node[above, font=\tiny] {Sinistre lourd} (lvl3);
+\end{tikzpicture}
+\caption{Processus d'escalade et de médiation des litiges en 3 niveaux}
+\end{figure}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Niveau 1 --- Médiation Amiable Automatisée :} Les utilisateurs consultent les photos d'entrée et de sortie scellées. Le locataire peut accepter une retenue forfaitaire partielle pour couvrir le coût d'une réparation mineure.
+    \item \textbf{Niveau 2 --- Arbitrage d'Expert MatOS :} Le service client examine les certificats d'horodatage RFC 3161, valide la chronologie des échanges et consulte le barème d'indemnisation officiel pour statuer de manière définitive.
+    \item \textbf{Niveau 3 --- Déclenchement de l'Indemnisation d'Assurance :} En cas de détérioration majeure ou de vol, le dossier d'instruction complet (pièces d'identité vérifiées, contrat signé, procès-verbal de dépôt de plainte) est transmis directement à la compagnie d'assurance partenaire pour règlement sous 7 jours.
+\end{enumerate}
+
+\chapter*{Bibliographie \& Références Ergonomiques}
+\addcontentsline{toc}{chapter}{Bibliographie \& Références Ergonomiques}
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Nielsen Norman Group :} \textit{Progressive Disclosure in Mobile User Interfaces}, Report on Usability Principles, 2023.
+    \item \textbf{Google Material Design 3 :} \textit{Design System Principles for Camera Feeds, Biometric Modals and Spatial Mapping}.
+    \item \textbf{Centre Euro-Méditerranéen d'Arbitrage (CEMA) :} \textit{Guide des bonnes pratiques de médiation commerciale et d'arbitrage en ligne}.
+    \item \textbf{Fogg, B.J. (Stanford University) :} \textit{Persuasive Technology: Using Computers to Change What We Think and Do}.
+\end{enumerate}
+
+\end{document}
