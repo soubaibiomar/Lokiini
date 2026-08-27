@@ -65,10 +65,10 @@ export default function Hero({ selectedCity, setSelectedCity, selectedCategory, 
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
           <span className="text-xs font-bold text-stone-800">
-            N°1 de la Location de Matériel & BTP au Maroc
+            Le Tiers de Confiance de la Location de Matériel au Maroc
           </span>
           <span className="hidden sm:inline-flex items-center gap-1 bg-teal-50 text-lokiini-teal font-extrabold text-[10px] tracking-wide uppercase px-2.5 py-0.5 rounded-full border border-teal-200">
-            Caution CMI
+            Zéro Caution Cash
           </span>
         </div>
 
