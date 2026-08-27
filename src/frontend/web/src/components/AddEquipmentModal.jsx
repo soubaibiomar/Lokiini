@@ -28,7 +28,7 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
   
   // Image Selection Mode: 'upload' | 'camera' | 'presets'
   const [imageMode, setImageMode] = useState('upload');
-  const [previewImage, setPreviewImage] = useState(SAMPLE_IMAGES[0].url);
+  const [previewImage, setPreviewImage] = useState(null);
   const [customImageUrl, setCustomImageUrl] = useState('');
 
   // Live Camera State
@@ -504,7 +504,7 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
 
                   <button
                     type="button"
-                    onClick={() => { setPreviewImage(SAMPLE_IMAGES[0].url); setCustomImageUrl(''); }}
+                    onClick={() => { setPreviewImage(null); setCustomImageUrl(''); }}
                     className="p-2 text-stone-400 hover:text-red-600 rounded-lg hover:bg-stone-50 transition-colors"
                     title="Supprimer la photo"
                   >
