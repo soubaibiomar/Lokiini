@@ -19,8 +19,8 @@ const FAQ_ITEMS = [
     a: "Lors de la remise de l'équipement, le propriétaire et le locataire réalisent un enregistrement vidéo de 30 secondes via l'application Lokiini. La vidéo capture l'état fonctionnel et les éventuelles micro-rayures. Le fichier est instantanément scellé par empreinte SHA-256 et horodatage RFC 3161, éliminant tout litige lors de la restitution."
   },
   {
-    q: "Dans quelles villes marocaines les équipements sont-ils livrables ?",
-    a: "Le service est opérationnel dans l'ensemble des 12 régions du Maroc avec une forte disponibilité de machines de chantier, groupes électrogènes et outillage lourd à Casablanca, Rabat, Marrakech, Tanger, Fès, Agadir, Oujda, Meknès, Kénitra, Tétouan, El Jadida et Laâyoune."
+    q: "Dans quelles villes marocaines les équipements sont-ils disponibles ?",
+    a: "Le service est opérationnel dans l'ensemble des 12 régions du Maroc avec une large sélection de matériel événementiel, audiovisuel, drones, outillage de bricolage, véhicules, high-tech, matériel médical et engins professionnels à Casablanca, Rabat, Marrakech, Tanger, Fès, Agadir, Oujda, Meknès, Kénitra, Tétouan, El Jadida et Laâyoune."
   }
 ];
 

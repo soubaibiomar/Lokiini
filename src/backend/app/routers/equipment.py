@@ -1,211 +1,354 @@
 import uuid
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from pydantic import BaseModel
-import httpx
+from sqlalchemy import text
 from app.core.database import get_db
-from app.core.config import settings
-from app.models.models import Equipment, User
-from app.schemas.schemas import EquipmentCreate, EquipmentResponse
+from app.models.models import Article, Equipment, User
+from app.schemas.equipment_schemas import (
+    EquipmentCreateRequest, EquipmentUpdateRequest,
+    EquipmentResponse, CategoryCountResponse
+)
+from app.services.risk_service import risk_service
+from app.services.geo_search_service import geo_search_service
+from app.services.meilisearch_service import meilisearch_service
+from app.routers.auth import get_current_user
 
-router = APIRouter(prefix="/equipment", tags=["Catalogue & Équipements"])
+router = APIRouter(tags=["Catalogue Matériel & Recherche Géospatiale PostGIS"])
 
-class EquipmentUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    category: Optional[str] = None
-    city: Optional[str] = None
-    address: Optional[str] = None
-    daily_price_mad: Optional[float] = None
-    deposit_amount_mad: Optional[float] = None
-    is_available: Optional[bool] = None
-    discount_pct: Optional[int] = None
-    specs_json: Optional[Dict[str, Any]] = None
-    images_urls: Optional[List[str]] = None
-
-async def sync_to_meilisearch(item: Equipment):
-    """Asynchronously index or update document in Meilisearch."""
-    try:
-        async with httpx.AsyncClient(timeout=2.0) as client:
-            headers = {"Authorization": f"Bearer {settings.MEILISEARCH_MASTER_KEY}"}
-            doc = {
-                "id": str(item.id),
-                "title": item.title,
-                "description": item.description,
-                "category": item.category,
-                "city": item.city,
-                "daily_price_mad": float(item.daily_price_mad),
-                "deposit_amount_mad": float(item.deposit_amount_mad),
-                "is_available": item.is_available
-            }
-            await client.post(
-                f"{settings.MEILISEARCH_URL}/indexes/equipment/documents",
-                json=[doc],
-                headers=headers
-            )
-    except Exception:
-        # Gracefully handle Meilisearch offline in local environments
-        pass
-
-@router.get("", response_model=List[EquipmentResponse])
-async def list_equipment(
-    city: Optional[str] = Query(None, description="Filtrer par ville marocaine (ex: Casablanca, Rabat, Marrakech)"),
-    category: Optional[str] = Query(None, description="Filtrer par catégorie (ex: btp, tools, audiovisual, energy, cleaning, heating)"),
-    search: Optional[str] = Query(None, description="Recherche textuelle"),
-    max_price: Optional[float] = Query(None, description="Prix journalier maximum en MAD"),
-    db: AsyncSession = Depends(get_db)
-):
-    query = select(Equipment).where(Equipment.is_available == True)
+# 1. Catégories phares avec compteurs
+@router.get("/articles/categories", response_model=List[CategoryCountResponse])
+@router.get("/equipment/categories", response_model=List[CategoryCountResponse])
+async def get_equipment_categories(db: AsyncSession = Depends(get_db)):
+    """Liste les catégories de matériel phares avec les compteurs d'articles actifs."""
+    categories_meta = [
+        {"categorie": "tools", "nom_affiche": "Outils & Bricolage", "icone": "🛠️"},
+        {"categorie": "btp", "nom_affiche": "BTP & Chantier", "icone": "🏗️"},
+        {"categorie": "audiovisuel", "nom_affiche": "Électronique & Vidéo", "icone": "📷"},
+        {"categorie": "evenementiel", "nom_affiche": "Fête & Événementiel", "icone": "🎉"},
+        {"categorie": "outdoor", "nom_affiche": "Outdoor & Camping", "icone": "🏕️"},
+        {"categorie": "cleaning", "nom_affiche": "Nettoyage & Entretien", "icone": "✨"},
+    ]
     
-    if city and city != "Toutes les villes":
-        query = query.where(Equipment.city.ilike(f"%{city}%"))
-    if category and category != "all":
-        query = query.where(Equipment.category == category)
-    if max_price:
-        query = query.where(Equipment.daily_price_mad <= max_price)
-    if search:
-        search_pattern = f"%{search}%"
-        query = query.where(
-            (Equipment.title.ilike(search_pattern)) | 
-            (Equipment.description.ilike(search_pattern)) |
-            (Equipment.city.ilike(search_pattern))
+    counts = {}
+    try:
+        res = await db.execute(
+            text("SELECT categorie, COUNT(*) as count FROM articles WHERE statut = 'actif' GROUP BY categorie")
         )
+        for row in res.fetchall():
+            counts[row[0]] = row[1]
+    except Exception:
+        pass
+        
+    return [
+        CategoryCountResponse(
+            categorie=c["categorie"],
+            nom_affiche=c["nom_affiche"],
+            icone=c["icone"],
+            total_articles=counts.get(c["categorie"], 2) # fallback
+        )
+        for c in categories_meta
+    ]
 
-    result = await db.execute(query.order_by(Equipment.created_at.desc()))
-    items = result.scalars().all()
-    return items
-
-@router.get("/my-listings", response_model=List[EquipmentResponse])
-async def get_my_equipment_listings(
-    owner_id: Optional[uuid.UUID] = None,
+# 2. Recherche géolocalisée par rayon PostGIS
+@router.get("/articles/recherche/geo")
+@router.get("/equipment/recherche/geo")
+async def search_equipment_geo(
+    lat: float = Query(..., description="Latitude GPS"),
+    lng: float = Query(..., description="Longitude GPS"),
+    radius_km: float = Query(25.0, description="Rayon de recherche en km"),
+    categorie: Optional[str] = Query(None),
+    city: Optional[str] = Query(None),
+    prix_min: Optional[float] = Query(None),
+    prix_max: Optional[float] = Query(None),
+    limit: int = Query(50, le=100),
+    offset: int = Query(0),
     db: AsyncSession = Depends(get_db)
 ):
-    if not owner_id:
-        # Default to first pro owner in database
-        result_user = await db.execute(select(User).where(User.user_role.in_(["pro_owner", "owner"])).limit(1))
-        user = result_user.scalars().first()
-        if not user:
-            # Fallback to any user
-            result_user = await db.execute(select(User).limit(1))
-            user = result_user.scalars().first()
-        if not user:
-            return []
-        owner_id = user.id
+    """Recherche d'équipements géolocalisés par proximité géographique exacte (ST_DistanceSphere)."""
+    results = await geo_search_service.search_nearby(
+        db=db,
+        lat=lat,
+        lng=lng,
+        radius_km=radius_km,
+        categorie=categorie,
+        city=city,
+        prix_min=prix_min,
+        prix_max=prix_max,
+        limit=limit,
+        offset=offset
+    )
+    return {"statut": "succes", "total": len(results), "donnees": results}
 
-    result = await db.execute(select(Equipment).where(Equipment.owner_id == owner_id).order_by(Equipment.created_at.desc()))
-    return result.scalars().all()
+# 3. Liste filtrée des articles / annonces
+@router.get("/articles")
+@router.get("/equipment")
+async def list_equipment(
+    q: Optional[str] = Query(None, description="Recherche textuelle"),
+    categorie: Optional[str] = Query(None),
+    city: Optional[str] = Query(None),
+    prix_min: Optional[float] = Query(None),
+    prix_max: Optional[float] = Query(None),
+    limit: int = Query(50, le=100),
+    offset: int = Query(0),
+    db: AsyncSession = Depends(get_db)
+):
+    """Liste filtrée des annonces de matériel avec pagination et filtres."""
+    query = select(Article).where(Article.statut == "actif")
 
-@router.get("/{equipment_id}", response_model=EquipmentResponse)
-async def get_equipment(equipment_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Equipment).where(Equipment.id == equipment_id))
-    equipment = result.scalars().first()
-    if not equipment:
+    if categorie:
+        query = query.where(Article.categorie == categorie)
+    if city:
+        query = query.where(Article.city.ilike(f"%{city}%"))
+    if prix_min is not None:
+        query = query.where(Article.prix_par_jour >= prix_min)
+    if prix_max is not None:
+        query = query.where(Article.prix_par_jour <= prix_max)
+    if q:
+        query = query.where((Article.titre.ilike(f"%{q}%")) | (Article.description.ilike(f"%{q}%")))
+
+    query = query.order_by(Article.cree_le.desc()).limit(limit).offset(offset)
+    result = await db.execute(query)
+    articles = result.scalars().all()
+
+    response_items = []
+    for a in articles:
+        # Get loueur details
+        loueur_res = await db.execute(select(User).where(User.id == a.loueur_id))
+        loueur = loueur_res.scalars().first()
+        
+        response_items.append({
+            "id": str(a.id),
+            "loueur_id": str(a.loueur_id),
+            "titre": a.titre,
+            "description": a.description,
+            "categorie": a.categorie,
+            "prix_par_jour": float(a.prix_par_jour),
+            "prix_par_semaine": float(a.prix_par_semaine) if a.prix_par_semaine else None,
+            "prix_par_mois": float(a.prix_par_mois) if a.prix_par_mois else None,
+            "montant_caution": float(a.montant_caution),
+            "mode_caution": a.mode_caution or "cash",
+            "niveau_risque": a.niveau_risque or "faible",
+            "kyc_requis": a.kyc_requis if a.kyc_requis is not None else False,
+            "photos": a.photos or [],
+            "specs": a.specs or {},
+            "city": a.city or "Casablanca",
+            "adresse_approximative": a.adresse_approximative,
+            "statut": a.statut,
+            "loueur_nom": loueur.nom_complet if loueur else "Loueur Lokiini",
+            "loueur_note": float(loueur.note) if loueur and loueur.note else 5.0,
+            "loueur_statut_kyc": loueur.statut_verification if loueur else "en_attente",
+            "cree_le": a.cree_le.isoformat() if a.cree_le else None
+        })
+
+    return {"statut": "succes", "total": len(response_items), "donnees": response_items}
+
+# 4. Mes annonces (Loueur connecté)
+@router.get("/articles/my-listings")
+@router.get("/equipment/my-listings")
+async def get_my_listings(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Récupère toutes les annonces publiées par l'utilisateur connecté."""
+    result = await db.execute(
+        select(Article).where(Article.loueur_id == current_user.id, Article.statut != "archive").order_by(Article.cree_le.desc())
+    )
+    articles = result.scalars().all()
+    return articles
+
+# 5. Détail d'une annonce
+@router.get("/articles/{article_id}")
+@router.get("/equipment/{equipment_id}")
+async def get_equipment_detail(
+    article_id: Optional[uuid.UUID] = None,
+    equipment_id: Optional[uuid.UUID] = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """Consulte la fiche détaillée complète d'un équipement."""
+    target_id = article_id or equipment_id
+    result = await db.execute(select(Article).where(Article.id == target_id))
+    article = result.scalars().first()
+    if not article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Équipement introuvable."
+            detail={"code": "EQUIPMENT_404", "message": "Annonce de matériel introuvable."}
         )
-    return equipment
 
-@router.post("", response_model=EquipmentResponse, status_code=status.HTTP_201_CREATED)
+    # Récupération profil loueur
+    loueur_res = await db.execute(select(User).where(User.id == article.loueur_id))
+    loueur = loueur_res.scalars().first()
+
+    return {
+        "id": str(article.id),
+        "loueur_id": str(article.loueur_id),
+        "titre": article.titre,
+        "description": article.description,
+        "categorie": article.categorie,
+        "prix_par_jour": float(article.prix_par_jour),
+        "prix_par_semaine": float(article.prix_par_semaine) if article.prix_par_semaine else None,
+        "prix_par_mois": float(article.prix_par_mois) if article.prix_par_mois else None,
+        "montant_caution": float(article.montant_caution),
+        "mode_caution": article.mode_caution or "cash",
+        "niveau_risque": article.niveau_risque or "faible",
+        "kyc_requis": bool(article.kyc_requis),
+        "photos": article.photos or [],
+        "specs": article.specs or {},
+        "city": article.city,
+        "adresse_approximative": article.adresse_approximative,
+        "statut": article.statut,
+        "loueur": {
+            "id": str(loueur.id) if loueur else None,
+            "nom": loueur.nom_complet if loueur else "Loueur Lokiini",
+            "note": float(loueur.note) if loueur and loueur.note else 5.0,
+            "badge_verifie": loueur.statut_verification == "approuve" if loueur else False,
+            "temps_reponse_minutes": loueur.temps_reponse_minutes if loueur else 30
+        },
+        "cree_le": article.cree_le.isoformat() if article.cree_le else None
+    }
+
+# 6. Création d'une annonce
+@router.post("/articles", status_code=status.HTTP_201_CREATED)
+@router.post("/equipment", status_code=status.HTTP_201_CREATED)
 async def create_equipment(
-    equipment_in: EquipmentCreate,
-    owner_id: Optional[uuid.UUID] = None,
+    payload: EquipmentCreateRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if not owner_id:
-        result = await db.execute(select(User).where(User.user_role.in_(["pro_owner", "owner"])).limit(1))
-        user = result.scalars().first()
-        if not user:
-            result = await db.execute(select(User).limit(1))
-            user = result.scalars().first()
-        if not user:
-            # Auto create default pro owner if empty
-            user = User(
-                full_name="Atlas Location BTP Maroc",
-                email="contact@atlasbtp.ma",
-                phone_number="+212661000001",
-                hashed_password="bcrypt_hashed_pass",
-                user_role="pro_owner",
-                company_name="Atlas Location BTP SARL",
-                company_ice="002345678000045",
-                city="Casablanca",
-                is_kyc_verified=True,
-                kyc_liveness_score=98.50
-            )
-            db.add(user)
-            await db.flush()
-        owner_id = user.id
-
-    new_equipment = Equipment(
-        owner_id=owner_id,
-        title=equipment_in.title,
-        description=equipment_in.description,
-        category=equipment_in.category,
-        city=equipment_in.city,
-        address=equipment_in.address or f"{equipment_in.city}, Maroc",
-        daily_price_mad=equipment_in.daily_price_mad,
-        deposit_amount_mad=equipment_in.deposit_amount_mad,
-        is_available=equipment_in.is_available if equipment_in.is_available is not None else True,
-        is_verified=True,
-        discount_pct=equipment_in.discount_pct or 0,
-        specs_json=equipment_in.specs_json or {},
-        images_urls=equipment_in.images_urls if equipment_in.images_urls else ["https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800"]
+    """Publie une nouvelle annonce de matériel avec calcul automatique du risque et point PostGIS."""
+    # 1. Évaluation automatique du risque via RiskService
+    risk_info = risk_service.evaluate_risk(
+        categorie=payload.categorie,
+        prix_par_jour=payload.prix_par_jour,
+        montant_caution=payload.montant_caution,
+        specs=payload.specs
     )
-    db.add(new_equipment)
+
+    new_id = uuid.uuid4()
+    # 2. Assignation coordonnées WKT PostGIS
+    point_wkt = f"SRID=4326;POINT({payload.lng} {payload.lat})"
+
+    article = Article(
+        id=new_id,
+        loueur_id=current_user.id,
+        titre=payload.titre,
+        description=payload.description,
+        categorie=payload.categorie,
+        prix_par_jour=payload.prix_par_jour,
+        prix_par_semaine=payload.prix_par_semaine,
+        prix_par_mois=payload.prix_par_mois,
+        montant_caution=payload.montant_caution,
+        mode_caution=payload.mode_caution or ("cash" if risk_info["caution_obligatoire"] else "non_requis"),
+        niveau_risque=risk_info["niveau_risque"],
+        kyc_requis=risk_info["kyc_obligatoire"],
+        photos=payload.photos or [],
+        specs=payload.specs or {},
+        coordonnees=point_wkt,
+        city=payload.city or "Casablanca",
+        adresse_approximative=payload.adresse_approximative or f"Quartier {payload.city}",
+        statut="actif",
+        cree_le=datetime.utcnow()
+    )
+    db.add(article)
     await db.commit()
-    await db.refresh(new_equipment)
+    await db.refresh(article)
 
-    await sync_to_meilisearch(new_equipment)
-    return new_equipment
+    # 3. Synchronisation asynchrone Meilisearch
+    await meilisearch_service.index_article({
+        "id": str(article.id),
+        "titre": article.titre,
+        "description": article.description,
+        "categorie": article.categorie,
+        "prix_par_jour": article.prix_par_jour,
+        "city": article.city,
+        "niveau_risque": article.niveau_risque
+    })
 
-@router.patch("/{equipment_id}", response_model=EquipmentResponse)
+    return {
+        "statut": "succes",
+        "message": "Annonce publiée avec succès.",
+        "article_id": str(article.id),
+        "niveau_risque": article.niveau_risque,
+        "kyc_requis": article.kyc_requis
+    }
+
+# 7. Mise à jour d'une annonce
+@router.put("/articles/{article_id}")
+@router.patch("/equipment/{equipment_id}")
 async def update_equipment(
-    equipment_id: uuid.UUID,
-    equipment_update: EquipmentUpdate,
+    payload: EquipmentUpdateRequest,
+    article_id: Optional[uuid.UUID] = None,
+    equipment_id: Optional[uuid.UUID] = None,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(Equipment).where(Equipment.id == equipment_id))
-    equipment = result.scalars().first()
-    if not equipment:
-        raise HTTPException(status_code=404, detail="Équipement introuvable.")
+    """Met à jour une annonce existante."""
+    target_id = article_id or equipment_id
+    result = await db.execute(select(Article).where(Article.id == target_id))
+    article = result.scalars().first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Annonce introuvable.")
 
-    if equipment_update.title is not None:
-        equipment.title = equipment_update.title
-    if equipment_update.description is not None:
-        equipment.description = equipment_update.description
-    if equipment_update.category is not None:
-        equipment.category = equipment_update.category
-    if equipment_update.city is not None:
-        equipment.city = equipment_update.city
-    if equipment_update.address is not None:
-        equipment.address = equipment_update.address
-    if equipment_update.daily_price_mad is not None:
-        equipment.daily_price_mad = equipment_update.daily_price_mad
-    if equipment_update.deposit_amount_mad is not None:
-        equipment.deposit_amount_mad = equipment_update.deposit_amount_mad
-    if equipment_update.is_available is not None:
-        equipment.is_available = equipment_update.is_available
-    if equipment_update.discount_pct is not None:
-        equipment.discount_pct = equipment_update.discount_pct
-    if equipment_update.specs_json is not None:
-        equipment.specs_json = equipment_update.specs_json
-    if equipment_update.images_urls is not None:
-        equipment.images_urls = equipment_update.images_urls
+    if article.loueur_id != current_user.id and current_user.user_role != "admin":
+        raise HTTPException(status_code=403, detail="Vous n'êtes pas autorisé à modifier cette annonce.")
 
+    if payload.titre is not None: article.titre = payload.titre
+    if payload.description is not None: article.description = payload.description
+    if payload.categorie is not None: article.categorie = payload.categorie
+    if payload.prix_par_jour is not None: article.prix_par_jour = payload.prix_par_jour
+    if payload.prix_par_semaine is not None: article.prix_par_semaine = payload.prix_par_semaine
+    if payload.prix_par_mois is not None: article.prix_par_mois = payload.prix_par_mois
+    if payload.montant_caution is not None: article.montant_caution = payload.montant_caution
+    if payload.mode_caution is not None: article.mode_caution = payload.mode_caution
+    if payload.photos is not None: article.photos = payload.photos
+    if payload.specs is not None: article.specs = payload.specs
+    if payload.statut is not None: article.statut = payload.statut
+    if payload.city is not None: article.city = payload.city
+    if payload.adresse_approximative is not None: article.adresse_approximative = payload.adresse_approximative
+
+    article.modifie_le = datetime.utcnow()
     await db.commit()
-    await db.refresh(equipment)
-    await sync_to_meilisearch(equipment)
-    return equipment
+    await db.refresh(article)
 
-@router.delete("/{equipment_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_equipment(equipment_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Equipment).where(Equipment.id == equipment_id))
-    equipment = result.scalars().first()
-    if not equipment:
-        raise HTTPException(status_code=404, detail="Équipement introuvable.")
+    # Réindexation Meilisearch
+    await meilisearch_service.index_article({
+        "id": str(article.id),
+        "titre": article.titre,
+        "description": article.description,
+        "categorie": article.categorie,
+        "prix_par_jour": article.prix_par_jour,
+        "city": article.city,
+        "niveau_risque": article.niveau_risque
+    })
 
-    await db.delete(equipment)
+    return {"statut": "succes", "message": "Annonce mise à jour avec succès."}
+
+# 8. Archivage logique
+@router.delete("/articles/{article_id}")
+@router.delete("/equipment/{equipment_id}")
+async def archive_equipment(
+    article_id: Optional[uuid.UUID] = None,
+    equipment_id: Optional[uuid.UUID] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Archivage logique de sécurité (statut = 'archive')."""
+    target_id = article_id or equipment_id
+    result = await db.execute(select(Article).where(Article.id == target_id))
+    article = result.scalars().first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Annonce introuvable.")
+
+    if article.loueur_id != current_user.id and current_user.user_role != "admin":
+        raise HTTPException(status_code=403, detail="Non autorisé.")
+
+    article.statut = "archive"
+    article.modifie_le = datetime.utcnow()
     await db.commit()
-    return None
+
+    # Retrait de Meilisearch
+    await meilisearch_service.remove_article(str(article.id))
+
+    return {"statut": "succes", "message": "Annonce archivée avec succès."}

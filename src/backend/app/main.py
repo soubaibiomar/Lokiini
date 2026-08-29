@@ -151,6 +151,54 @@ async def init_db_and_seed():
                         discount_pct=0,
                         specs_json={"Puissance": "1500 Watts", "Impact": "25 Joules", "Emmanchement": "SDS-Max"},
                         images_urls=["/images/jackhammer.jpg"]
+                    ),
+                    Equipment(
+                        id=Equipment.__table__.c.id.type.python_type("e7777777-7777-7777-7777-777777777777"),
+                        owner_id=pro_owner.id,
+                        title="Tente Caïdale Traditionnelle Marocaine 50m² (50-80 Pers)",
+                        description="Magnifique tente caïdale artisanale doublée rouge/vert avec motifs traditionnels, armature acier galvanisé renforcée pour mariages, réceptions et événements.",
+                        category="event",
+                        city="Marrakech",
+                        address="Palmeraie & Guéliz, Marrakech",
+                        daily_price_mad=1200.00,
+                        deposit_amount_mad=4000.00,
+                        is_available=True,
+                        is_verified=True,
+                        discount_pct=15,
+                        specs_json={"Surface": "50 m² (5x10m)", "Capacité": "80 personnes", "Montage": "Équipe incluse"},
+                        images_urls=["https://images.unsplash.com/photo-1519741497674-611481863552?w=800"]
+                    ),
+                    Equipment(
+                        id=Equipment.__table__.c.id.type.python_type("e8888888-8888-8888-8888-888888888888"),
+                        owner_id=pro_owner.id,
+                        title="Fourgon Utilitaire 12m³ Renault Master avec Hayon",
+                        description="Camionnette utilitaire diesel permis B avec hayon hydraulique 500kg pour déménagements, livraisons et transport d'équipements.",
+                        category="vehicles",
+                        city="Casablanca",
+                        address="Sidi Maârouf, Casablanca",
+                        daily_price_mad=450.00,
+                        deposit_amount_mad=3500.00,
+                        is_available=True,
+                        is_verified=True,
+                        discount_pct=10,
+                        specs_json={"Volume": "12 m³", "Permis": "Permis B", "Hayon": "500 kg hydraulique"},
+                        images_urls=["https://images.unsplash.com/photo-1559297434-fae8a1916a79?w=800"]
+                    ),
+                    Equipment(
+                        id=Equipment.__table__.c.id.type.python_type("e9999999-9999-9999-9999-999999999999"),
+                        owner_id=pro_owner.id,
+                        title="Pack Casque VR Meta Quest 3 512Go + Manettes",
+                        description="Casque de réalité mixte 4K+ avec pass-through couleur haute fidélité pour team-building et animations salon.",
+                        category="hightech",
+                        city="Rabat",
+                        address="Technopolis, Rabat",
+                        daily_price_mad=200.00,
+                        deposit_amount_mad=2000.00,
+                        is_available=True,
+                        is_verified=True,
+                        discount_pct=0,
+                        specs_json={"Stockage": "512 Go", "Écrans": "4K+ Infinite Display", "Usage": "VR / Événements"},
+                        images_urls=["https://images.unsplash.com/photo-1622979135225-d2ba269bc1df?w=800"]
                     )
                 ]
                 session.add_all(equipments)
@@ -195,14 +243,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi import HTTPException
+from fastapi.exceptions import RequestValidationError
+from app.core.exceptions import global_http_exception_handler, validation_exception_handler
+from app.routers import auth, users, equipment, bookings, kyc, inspections, handoff, webhooks, contracts, billing, messaging
+
+# Exception Handlers
+app.add_exception_handler(HTTPException, global_http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+
 # Include Routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(users.router, prefix=settings.API_V1_STR)
 app.include_router(equipment.router, prefix=settings.API_V1_STR)
 app.include_router(bookings.router, prefix=settings.API_V1_STR)
 app.include_router(kyc.router, prefix=settings.API_V1_STR)
 app.include_router(inspections.router, prefix=settings.API_V1_STR)
+app.include_router(handoff.router, prefix=settings.API_V1_STR)
 app.include_router(contracts.router, prefix=settings.API_V1_STR)
 app.include_router(webhooks.router, prefix=settings.API_V1_STR)
+app.include_router(billing.router, prefix=settings.API_V1_STR)
+app.include_router(messaging.router, prefix=settings.API_V1_STR)
 
 @app.get("/health", tags=["Health"])
 @app.get(f"{settings.API_V1_STR}/health", tags=["Health"])

@@ -8,39 +8,39 @@ import { getBookings, updateBookingStatus } from '../services/api';
 const DEFAULT_RENTALS = [
   {
     id: 'b1111111-1111-1111-1111-111111111111',
-    equipment_title: 'Mini-Pelle Compacte Bobcat E19 (1.9 Tonne)',
-    renter_name: 'Karim Tazi (Entreprise BTP)',
+    equipment_title: 'Tente Caïdale Traditionnelle Marocaine 50m²',
+    renter_name: 'Karim Tazi (Agence Événements Marrakech)',
     start_date: '2026-08-24',
     end_date: '2026-08-31',
     total_days: 7,
-    rental_total_mad: 7168,
-    deposit_hold_mad: 8000,
+    rental_total_mad: 8400,
+    deposit_hold_mad: 4000,
     booking_status: 'in_progress',
     cmi_status: 'held',
     cmi_auth_token: 'CMI_AUTH_94821A84'
   },
   {
     id: 'b2222222-2222-2222-2222-222222222222',
-    equipment_title: 'Bétonnière Professionnelle Chantier 160L',
-    renter_name: 'Omar Benjelloun',
+    equipment_title: 'Caméra Cinéma Sony FX3 4K + Kit XLR',
+    renter_name: 'Mehdi Alami (Studio Production Casa)',
     start_date: '2026-08-26',
     end_date: '2026-08-29',
     total_days: 3,
-    rental_total_mad: 459,
-    deposit_hold_mad: 1500,
+    rental_total_mad: 1350,
+    deposit_hold_mad: 5000,
     booking_status: 'confirmed',
     cmi_status: 'held',
     cmi_auth_token: 'CMI_AUTH_102938B7'
   },
   {
     id: 'b3333333-3333-3333-3333-333333333333',
-    equipment_title: 'Caméra Cinéma Sony FX3 4K Full-Frame',
-    renter_name: 'Mehdi Alami (Studio Marrakech)',
+    equipment_title: 'Fourgon Utilitaire 12m³ Renault Master avec Hayon',
+    renter_name: 'Youssef Berrada (Transport & Déménagement)',
     start_date: '2026-08-20',
     end_date: '2026-08-26',
     total_days: 6,
-    rental_total_mad: 2430,
-    deposit_hold_mad: 5000,
+    rental_total_mad: 2700,
+    deposit_hold_mad: 3500,
     booking_status: 'completed',
     cmi_status: 'released',
     cmi_auth_token: 'CMI_AUTH_394812C4'
@@ -105,14 +105,14 @@ export default function OwnerDashboard({
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-lokiini-teal text-white">
-              PORTAIL PRO LOUEUR
+              PORTAIL LOUEUR & GESTION DE PARC
             </span>
             <span className="text-xs text-stone-500">
-              {currentUser?.company_name || 'Atlas Location BTP Maroc'} (ICE: {currentUser?.company_ice || '002345678000045'})
+              {currentUser?.company_name || currentUser?.full_name || 'Espace Loueur Partenaire'} {currentUser?.company_ice ? `(ICE: ${currentUser.company_ice})` : ''}
             </span>
           </div>
           <h1 className="text-3xl font-black text-lokiini-charcoal font-['Outfit'] mt-1">
-            Tableau de Bord & Gestion de Flotte
+            Tableau de Bord & Suivi des Locations
           </h1>
         </div>
 

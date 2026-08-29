@@ -5,44 +5,44 @@ const MOROCCAN_REGIONS = [
   {
     city: 'Casablanca',
     region: 'Casablanca-Settat',
-    desc: 'Grand Casablanca, Ain Sebaa, Mohammedia, Bouskoura & Nouaceur',
-    count: '420+ machines disponibles',
-    tag: 'Hub Principal BTP'
+    desc: 'Grand Casablanca, Ain Sebaa, Anfa, Maârif, Mohammedia & Bouskoura',
+    count: '540+ matériels & équipements',
+    tag: 'Hub National Universel'
   },
   {
     city: 'Rabat',
     region: 'Rabat-Salé-Kénitra',
-    desc: 'Rabat Agdal, Salé, Temara, Tamesna & Technopolis',
-    count: '280+ machines disponibles',
-    tag: 'Secteur Tertiaire & Chantiers'
+    desc: 'Agdal, Souissi, Technopolis, Salé, Temara & Tamesna',
+    count: '380+ matériels & équipements',
+    tag: 'Événements & High-Tech'
   },
   {
     city: 'Marrakech',
     region: 'Marrakech-Safi',
-    desc: 'Guéliz, Sidi Ghanem, Palmeraie, Tamansourt & Al Haouz',
-    count: '195+ machines disponibles',
-    tag: 'Événementiel & Rénovation'
+    desc: 'Guéliz, Hivernage, Palmeraie, Sidi Ghanem & Désert d\'Agafay',
+    count: '320+ matériels & équipements',
+    tag: 'Tournages, Fêtes & Loisirs'
   },
   {
     city: 'Tanger',
     region: 'Tanger-Tétouan-Al Hoceïma',
-    desc: 'Tanger Med, Zone Franche TFZ, Malabata & Tétouan',
-    count: '310+ machines disponibles',
-    tag: 'Industrie & Infrastructures'
+    desc: 'Tanger Ville, TFZ, Malabata, Gzenaya & Tétouan',
+    count: '360+ matériels & équipements',
+    tag: 'Industrie, Drones & Pro'
   },
   {
     city: 'Agadir',
     region: 'Souss-Massa',
-    desc: 'Agadir Ville, Dcheira, Inezgane, Taghazout & Aït Melloul',
-    count: '145+ machines disponibles',
-    tag: 'Tourisme & Agriculture'
+    desc: 'Agadir Baie, Taghazout, Dcheira, Inezgane & Aït Melloul',
+    count: '210+ matériels & équipements',
+    tag: 'Loisirs, Sport & Outillage'
   },
   {
     city: 'Fès',
     region: 'Fès-Meknès',
-    desc: 'Fès Saïss, Sidi Brahim, Dokkarat & Meknès Ville Nouvelle',
-    count: '130+ machines disponibles',
-    tag: 'Artisanat & Construction'
+    desc: 'Fès Ville Nouvelle, Sidi Brahim, Narjiss & Meknès',
+    count: '180+ matériels & équipements',
+    tag: 'Artisanat, Fêtes & Matériel'
   }
 ];
 
@@ -57,10 +57,10 @@ export default function GeoCitiesSection({ selectedCity, onSelectCity }) {
           <span>Couverture Géographique Nationale — Royaume du Maroc</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-black text-lokiini-charcoal font-['Outfit'] tracking-tight">
-          Location de Matériel & Engins de Chantier dans Toutes les Régions
+          Location de Matériel & Équipements dans Toutes les Régions
         </h2>
         <p className="text-stone-600 text-sm mt-3 leading-relaxed">
-          Trouvez des équipements vérifiés au plus près de votre chantier à Casablanca, Rabat, Marrakech, Tanger et dans plus de 30 villes marocaines avec livraison sur site ou retrait sécurisé.
+          Trouvez des équipements vérifiés près de chez vous à Casablanca, Rabat, Marrakech, Tanger et dans plus de 30 villes marocaines avec livraison rapide ou retrait direct en main propre.
         </p>
       </div>
 
@@ -98,7 +98,7 @@ export default function GeoCitiesSection({ selectedCity, onSelectCity }) {
               <div className="flex items-center justify-between pt-3 border-t border-stone-100 text-xs font-bold text-lokiini-teal">
                 <span className="flex items-center gap-1">
                   <Truck className="w-3.5 h-3.5" />
-                  Livraison Chantier Disponible
+                  Livraison & Retrait Disponibles
                 </span>
                 <span className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                   Explorer
@@ -133,7 +133,7 @@ export default function GeoCitiesSection({ selectedCity, onSelectCity }) {
             🛡️
           </div>
           <h4 className="text-sm font-bold text-stone-900">Protection CNDP (Loi 09-08)</h4>
-          <p className="text-xs text-stone-500 mt-1">Identités vérifiées par biométrie vivante avec purge immédiate des vidéos.</p>
+          <p className="text-xs text-stone-500 mt-1">Identités vérifiées par biométrie vivante avec purge immédiate des flux.</p>
         </div>
       </div>
 

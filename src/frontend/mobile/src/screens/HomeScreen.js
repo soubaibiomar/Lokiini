@@ -4,35 +4,43 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-nati
 const MOCK_EQUIPMENT = [
   {
     id: 'e1',
-    title: 'Bétonnière Chantier 160L',
-    city: 'Casablanca',
-    category: 'BTP',
-    daily_price_mad: 180,
-    deposit_amount_mad: 1500
+    title: 'Tente Caïdale Royale 50m²',
+    city: 'Marrakech',
+    category: 'Événementiel',
+    daily_price_mad: 1200,
+    deposit_amount_mad: 4000
   },
   {
     id: 'e2',
-    title: 'Mini-Pelle Bobcat E19',
+    title: 'Caméra Sony FX3 4K + Drones',
     city: 'Casablanca',
-    category: 'BTP',
-    daily_price_mad: 1280,
-    deposit_amount_mad: 8000
-  },
-  {
-    id: 'e3',
-    title: 'Sony FX3 4K Full-Frame',
-    city: 'Marrakech',
     category: 'Audiovisuel',
     daily_price_mad: 450,
     deposit_amount_mad: 5000
   },
   {
+    id: 'e3',
+    title: 'Fourgon Utilitaire Renault Master',
+    city: 'Casablanca',
+    category: 'Véhicules',
+    daily_price_mad: 450,
+    deposit_amount_mad: 3500
+  },
+  {
     id: 'e4',
-    title: 'Groupe Électrogène 10kVA',
+    title: 'Pack Casque VR Meta Quest 3',
+    city: 'Rabat',
+    category: 'High-Tech',
+    daily_price_mad: 200,
+    deposit_amount_mad: 2000
+  },
+  {
+    id: 'e5',
+    title: 'Nettoyeur Haute Pression Kärcher Pro',
     city: 'Tanger',
-    category: 'Énergie',
-    daily_price_mad: 350,
-    deposit_amount_mad: 3000
+    category: 'Outillage',
+    daily_price_mad: 150,
+    deposit_amount_mad: 1200
   }
 ];
 

@@ -4,12 +4,16 @@ import { MOROCCAN_CITIES, CATEGORIES } from '../data/mockData';
 import { createEquipment } from '../services/api';
 
 const SAMPLE_IMAGES = [
-  { label: 'Bétonnière Chantier', url: '/images/concrete_mixer.jpg' },
-  { label: 'Mini-Pelle Bobcat', url: '/images/mini_excavator.jpg' },
-  { label: 'Nettoyeur 180 Bar', url: '/images/pressure_washer.jpg' },
-  { label: 'Caméra Sony FX3', url: '/images/sony_fx3.jpg' },
-  { label: 'Groupe 10kVA', url: '/images/generator_10kva.jpg' },
-  { label: 'Perforateur Démo', url: '/images/jackhammer.jpg' }
+  { label: 'Tente Caïdale Événement', url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Pack Sono JBL 2000W', url: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Caméra Sony FX3 4K', url: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Drone DJI Mavic 3 Pro', url: 'https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Nettoyeur HP Kärcher', url: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Fourgon Utilitaire 12m³', url: 'https://images.unsplash.com/photo-1559297434-fae8a1916a79?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Quad Yamaha 700cc', url: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Casque VR Meta Quest 3', url: 'https://images.unsplash.com/photo-1622979135225-d2ba269bc1df?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Fauteuil Roulant Alu', url: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop&q=80' },
+  { label: 'Mini-Pelle Bobcat E19', url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800&auto=format&fit=crop&q=80' }
 ];
 
 export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded }) {

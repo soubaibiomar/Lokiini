@@ -22,4 +22,10 @@ class Settings(BaseSettings):
     DEFAULT_CURRENCY: str = "MAD"
     PLATFORM_COMMISSION_PCT: float = 0.15 # 15% pour particuliers, 7% pour pros
 
+    # Didit KYC & Webhooks
+    DIDIT_API_KEY: str = os.getenv("DIDIT_API_KEY", "didit_demo_api_key_morocco")
+    DIDIT_WEBHOOK_SECRET: str = os.getenv("DIDIT_WEBHOOK_SECRET", "didit_webhook_secret_hmac_2026")
+    DIDIT_API_URL: str = os.getenv("DIDIT_API_URL", "https://api.didit.me/v1")
+    API_BASE_URL: str = os.getenv("API_BASE_URL", "http://localhost")
+
 settings = Settings()

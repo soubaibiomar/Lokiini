@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, UserCheck, PlusCircle, LayoutDashboard, User, LogOut } from 'lucide-react';
+import { ShieldCheck, UserCheck, PlusCircle, LayoutDashboard, User, LogOut, CreditCard, Sparkles } from 'lucide-react';
 
 export default function Navbar({ 
   onOpenKYC, 
@@ -11,8 +11,13 @@ export default function Navbar({
   currentUser,
   onLogout
 }) {
+  const handlePricingClick = () => {
+    setCurrentView('pricing');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200 shadow-sm">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         
         {/* Brand Logo */}
@@ -27,27 +32,49 @@ export default function Navbar({
           />
         </div>
 
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-stone-700">
+        {/* Navigation Links (Desktop & Tablet) */}
+        <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold text-stone-700">
           <button 
-            onClick={() => setCurrentView('catalog')}
+            onClick={() => {
+              setCurrentView('catalog');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             className={`hover:text-lokiini-teal transition-colors ${currentView === 'catalog' ? 'text-lokiini-teal font-bold' : ''}`}
           >
             Accueil & Catalogue
           </button>
-          
+
+          {/* Grille Tarifaire (Price Grid) */}
           <button 
-            onClick={() => setCurrentView('dashboard')}
-            className={`flex items-center gap-1.5 hover:text-lokiini-teal transition-colors ${currentView === 'dashboard' ? 'text-lokiini-teal font-bold' : ''}`}
+            onClick={handlePricingClick}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all ${
+              currentView === 'pricing' 
+                ? 'bg-emerald-50 text-lokiini-teal font-bold border border-emerald-200 shadow-sm' 
+                : 'hover:text-lokiini-teal text-stone-700 hover:bg-stone-50'
+            }`}
           >
-            <LayoutDashboard className="w-4 h-4" />
-            Espace Loueur Pro
+            <CreditCard className="w-4 h-4 text-lokiini-teal" />
+            <span>Grille Tarifaire</span>
+            <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center gap-0.5">
+              <Sparkles className="w-2.5 h-2.5" />
+              Pro dès 7%
+            </span>
           </button>
         </nav>
 
         {/* Actions & KYC Status */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           
+          {/* Quick Grille Tarifaire Link for Mobile/Tablet */}
+          <button
+            onClick={handlePricingClick}
+            className="flex lg:hidden items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold bg-stone-100 text-stone-800 hover:bg-stone-200 border border-stone-300 transition-all"
+            title="Grille Tarifaire & Formules"
+          >
+            <CreditCard className="w-3.5 h-3.5 text-lokiini-teal" />
+            <span>Tarifs</span>
+          </button>
+
           {/* KYC Status Button */}
           <button
             onClick={onOpenKYC}
@@ -73,7 +100,13 @@ export default function Navbar({
 
           {/* Publier une Annonce Button */}
           <button
-            onClick={onOpenAddEquipment}
+            onClick={() => {
+              if (currentUser) {
+                onOpenAddEquipment();
+              } else {
+                onOpenAuth();
+              }
+            }}
             className="hidden sm:flex items-center gap-1.5 bg-lokiini-terracotta hover:bg-lokiini-terracotta-dark text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all"
           >
             <PlusCircle className="w-4 h-4" />
@@ -87,8 +120,18 @@ export default function Navbar({
                 onClick={() => setCurrentView('dashboard')}
                 className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-stone-800 hover:text-lokiini-teal"
               >
-                <User className="w-3.5 h-3.5" />
-                <span className="max-w-[100px] truncate">{currentUser.full_name?.split(' ')[0] || 'Profil'}</span>
+                {currentUser.avatar_url || currentUser.photoURL ? (
+                  <img
+                    src={currentUser.avatar_url || currentUser.photoURL}
+                    alt={currentUser.full_name || 'Utilisateur'}
+                    className="w-5 h-5 rounded-full object-cover border border-stone-300"
+                  />
+                ) : (
+                  <User className="w-3.5 h-3.5" />
+                )}
+                <span className="max-w-[110px] truncate">
+                  {currentUser.full_name ? currentUser.full_name.split(' ')[0] : currentUser.email ? currentUser.email.split('@')[0] : 'Profil'}
+                </span>
               </button>
               <button
                 onClick={onLogout}

@@ -24,11 +24,11 @@ export default function ContractViewerModal({ isOpen, onClose, bookingId, bookin
           renter_name: bookingData?.renter_name || "Karim Tazi",
           renter_cin: "BK849201",
           renter_phone: "+212 6 62 00 00 02",
-          owner_name: bookingData?.owner_name || "Atlas Location BTP Maroc",
-          owner_company: "Atlas Location BTP SARL",
-          owner_ice: "002345678000045",
-          equipment_title: bookingData?.equipment_title || "Équipement Professionnel",
-          equipment_category: "BTP & Chantier",
+          owner_name: bookingData?.owner_name || "Lokiini Loueur Partenaire",
+          owner_company: bookingData?.owner_company || "Entreprise Loueur Partenaire",
+          owner_ice: bookingData?.owner_ice || "002345678000045",
+          equipment_title: bookingData?.equipment_title || "Matériel / Équipement Certifié",
+          equipment_category: bookingData?.category || "Matériel & Équipement",
           rental_period: `${bookingData?.start_date || '2026-08-28'} au ${bookingData?.end_date || '2026-08-31'} (${bookingData?.total_days || 3} jours)`,
           daily_rate_mad: bookingData?.daily_rate_applied_mad || 180,
           total_rental_mad: bookingData?.rental_total_mad || 540,
@@ -36,11 +36,11 @@ export default function ContractViewerModal({ isOpen, onClose, bookingId, bookin
           cmi_auth_token: bookingData?.cmi_auth_token || "CMI_AUTH_89421A9E",
           sha256_seal: bookingData?.contract_sha256 || "7b2a94f1c3098e72ba6301fa38290f9b6910a301db54321fa98bc1948301ec74",
           legal_clauses: [
-            "Article 1 — Objet : Le présent contrat de louage de chose mobilière est régi par les dispositions des articles 627 et suivants du Dahir des Obligations et Contrats (DOC) du Royaume du Maroc.",
+            "Article 1 — Objet : Le présent contrat de louage de chose mobilière (matériel audiovisuel, événementiel, outillage, véhicules, high-tech, médical, énergie et engins) est régi par les dispositions des articles 627 et suivants du Dahir des Obligations et Contrats (DOC) du Royaume du Maroc.",
             "Article 2 — Équipement loué : Matériel mis à disposition en parfait état de fonctionnement avec vérification contradictoire d'entrée horodatée RFC 3161.",
             "Article 3 — Cautionnement CMI : Une pré-autorisation bancaire de garantie est bloquée sous séquestre électronique CMI sans débit immédiat.",
             "Article 4 — Signature & Force Probante : En application de la Loi n° 53-05 relative à l'échange électronique de données juridiques, le présent acte a pleine valeur probatoire entre les parties.",
-            "Article 5 — Juridiction : Tout litige relève de la compétence exclusive du Tribunal de Commerce de Casablanca."
+            "Article 5 — Juridiction : Tout litige relève de la compétence exclusive du Tribunal de Commerce compétent au Royaume du Maroc."
           ]
         });
       }
