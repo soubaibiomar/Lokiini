@@ -52,21 +52,21 @@ Tous les dossiers stratégiques, techniques et juridiques sont rédigés et comp
 D:\startup\MatOS/
 ├── README.md
 ├── docs/
-│   ├── 00_master_dossier_strategique/       # Rapport exécutif consolidé
-│   ├── 01_etude_marche_et_concurrence/      # Étude sectorielle, concurrence et personas
-│   ├── 02_architecture_technique_et_ia/     # Schémas techniques, API & module liveness
-│   ├── 03_cadre_juridique_et_conformite_cndp/# Lois marocaines, statuts SARL-AU, CGU, CNDP
+│   ├── 00_master_dossier_strategique/         # Rapport exécutif consolidé
+│   ├── 01_etude_marche_et_concurrence/        # Étude sectorielle, concurrence et personas
+│   ├── 02_architecture_technique_et_ia/       # Schémas techniques, API & module liveness
+│   ├── 03_cadre_juridique_et_conformite_cndp/ # Lois marocaines, statuts SARL-AU, CGU, CNDP
 │   ├── 04_specification_produit_ux_et_process/# Funnels UX, matrice de risque, litiges
-│   ├── 05_modele_economique_et_business_plan/# Grilles tarifaires, P&L 36M, point mort
-│   └── assets/                              # Logos, diagrammes et illustrations
+│   ├── 05_modele_economique_et_business_plan/ # Grilles tarifaires, P&L 36M, point mort
+│   └── assets/                                # Logos, diagrammes et illustrations
 ├── src/
-│   ├── backend/                             # API FastAPI / PostgreSQL
+│   ├── backend/                               # API FastAPI / PostgreSQL
 │   ├── frontend/
-│   │   ├── web/                             # Catalogue Web Next.js / PWA (SEO-optimized)
-│   │   └── mobile/                          # Application Flutter iOS/Android
-│   └── ml_biometrics/                       # Inférence OCR CIN & Anti-Deepfake / Liveness
+│   │   ├── web/                               # Catalogue Web Next.js / PWA (SEO-optimized)
+│   │   └── mobile/                            # Application Flutter iOS/Android
+│   └── ml_biometrics/                         # Inférence OCR CIN & Anti-Deepfake / Liveness
 └── scripts/
-    └── compile_all_pdfs.py                  # Script d'automatisation de compilation LaTeX
+    └── compile_all_pdfs.py                    # Script d'automatisation de compilation LaTeX
 `
 
 ---

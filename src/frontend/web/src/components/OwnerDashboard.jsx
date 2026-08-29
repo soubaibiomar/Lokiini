@@ -226,7 +226,7 @@ export default function OwnerDashboard({
                     {r.renter_name || 'Locataire'}
                   </td>
                   <td className="py-4 px-6 text-stone-500 whitespace-nowrap">
-                    {r.start_date} ➔ {r.end_date}
+                    {r.start_date} au {r.end_date}
                   </td>
                   <td className="py-4 px-6 font-black text-stone-800">
                     {r.rental_total_mad} MAD

@@ -5,7 +5,7 @@ const getApiBaseUrl = () => {
       return `${window.location.origin}/api/v1`;
     }
   }
-  return 'http://localhost:8000/api/v1';
+  return 'http://localhost:8001/api/v1';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

@@ -350,7 +350,7 @@ export default function AddEquipmentModal({ isOpen, onClose, onEquipmentAdded })
               </div>
             </div>
 
-            {/* 📸 IMAGE UPLOAD / CAMERA / PRESETS SELECTOR */}
+            {/* IMAGE UPLOAD / CAMERA / PRESETS SELECTOR */}
             <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
               <div className="flex items-center justify-between mb-3">
                 <label className="block text-xs font-bold text-stone-700">Photo de l'équipement *</label>
