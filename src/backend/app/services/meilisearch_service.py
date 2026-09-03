@@ -29,8 +29,8 @@ class MeilisearchService:
         except Exception as e:
             logger.debug(f"Meilisearch offline (fallback SQL actif) : {e}")
 
-    async def search_articles(self, query: str, limit: int = 20) -> List[str]:
-        """Recherche plein-texte retournant les IDs d'articles correspondants."""
+    async def search_articles(self, query: str, limit: int = 100) -> Optional[List[str]]:
+        """Return matching IDs, or None when Meilisearch is unavailable."""
         try:
             import httpx
             headers = {"Authorization": f"Bearer {self.key}"}
@@ -43,9 +43,10 @@ class MeilisearchService:
                 if res.status_code == 200:
                     hits = res.json().get("hits", [])
                     return [h["id"] for h in hits]
-        except Exception:
-            pass
-        return []
+                logger.debug("Meilisearch search failed with status %s", res.status_code)
+        except Exception as exc:
+            logger.debug("Meilisearch unavailable; SQL search will be used: %s", exc)
+        return None
 
     async def remove_article(self, article_id: str):
         """Retire un article de l'index Meilisearch."""

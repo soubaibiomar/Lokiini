@@ -1,6 +1,5 @@
 import uuid
 from typing import List
-from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -10,14 +9,14 @@ from app.schemas.user_schemas import (
     UserProfileResponse, UserUpdateRequest, PublicUserResponse,
     UserEquipmentSummary, UserReviewSummary
 )
-from app.routers.auth import get_current_user
+from app.routers.auth import get_current_user, get_me, update_me
 
 router = APIRouter(prefix="/utilisateurs", tags=["Utilisateurs & Profils Publics"])
 
 @router.get("/moi", response_model=UserProfileResponse)
 async def get_my_profile(current_user: User = Depends(get_current_user)):
-    """Récupère le profil complet de l'utilisateur connecté."""
-    return current_user
+    """Compatibility path for the authoritative identity profile handler."""
+    return await get_me(current_user)
 
 @router.put("/moi", response_model=UserProfileResponse)
 async def update_my_profile(
@@ -25,18 +24,8 @@ async def update_my_profile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Met à jour le profil de l'utilisateur connecté."""
-    if payload.nom_complet is not None: current_user.nom_complet = payload.nom_complet
-    if payload.telephone is not None: current_user.telephone = payload.telephone
-    if payload.avatar_url is not None: current_user.avatar_url = payload.avatar_url
-    if payload.company_name is not None: current_user.company_name = payload.company_name
-    if payload.company_ice is not None: current_user.company_ice = payload.company_ice
-    if payload.city is not None: current_user.city = payload.city
-    
-    current_user.modifie_le = datetime.utcnow()
-    await db.commit()
-    await db.refresh(current_user)
-    return current_user
+    """Compatibility path for the authoritative identity profile handler."""
+    return await update_me(payload, current_user, db)
 
 @router.get("/{user_id}/profil", response_model=PublicUserResponse)
 async def get_public_user_profile(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
@@ -57,7 +46,7 @@ async def get_public_user_profile(user_id: uuid.UUID, db: AsyncSession = Depends
         user_id=user.id,
         nom=user.nom_complet,
         note=float(user.note) if user.note else 5.0,
-        badge_verifie=user.statut_verification == "approuve",
+        badge_verifie=user.statut_verification == "verified",
         date_inscription=user.cree_le,
         temps_reponse_minutes=user.temps_reponse_minutes or 30,
         city=user.city or "Casablanca",

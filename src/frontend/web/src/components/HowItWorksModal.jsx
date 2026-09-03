@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, Banknote, FileCheck, Camera, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, ShieldCheck, Banknote, FileCheck, Camera } from 'lucide-react';
 
 const STEPS = [
   {
@@ -7,28 +7,28 @@ const STEPS = [
     title: 'Trouvez et Réservez votre Matériel',
     desc: 'Explorez le catalogue d équipements vérifiés près de chez vous. Sélectionnez vos dates de location et choisissez entre le retrait sur place ou la livraison coursier.',
     icon: Banknote,
-    detail: 'Paiement à la livraison (COD) : Aucun numéro de carte bancaire n est requis en ligne.'
+    detail: 'La demande ne confirme aucun paiement. Les modalités disponibles apparaissent après acceptation.'
   },
   {
     num: '02',
-    title: 'Vérification d Identité Didit (CNDP)',
-    desc: 'Pour activer la transaction en toute confiance, votre document marocain (CIN ou Passeport) et un rapide selfie vidéo de vivacité sont validés par Didit.',
+    title: 'Vérification d identité auprès du fournisseur',
+    desc: 'Lorsque la transaction l exige, la vérification est réalisée dans le parcours hébergé du fournisseur. Lokiini utilise ensuite le statut transmis par son backend.',
     icon: ShieldCheck,
-    detail: 'Zero-Knowledge : Vos données biométriques sont analysées en mémoire vive et immédiatement purgées.'
+    detail: 'Le navigateur ne peut ni choisir ni modifier le résultat de la vérification.'
   },
   {
     num: '03',
     title: 'Remise & État des Lieux Numérique Contradictoire',
-    desc: 'Lors de la remise de l équipement, le propriétaire et le locataire prennent les photos d état des lieux horodatées RFC 3161 et signent le contrat de bail (Loi 53-05).',
+    desc: 'Lors de la remise de l équipement, le propriétaire et le locataire prennent les photos d état des lieux contradictoires et valident le contrat de location.',
     icon: Camera,
-    detail: 'Réglez le montant de la location et déposez la caution en espèces auprès du loueur.'
+    detail: 'Le paiement de location et le dépôt remboursable restent deux opérations distinctes, confirmées uniquement par le backend.'
   },
   {
     num: '04',
     title: 'Retour du Matériel & Restitution de la Caution',
-    desc: 'À l échéance, l état des lieux de retour est scellé. Le loueur valide la restitution et vous rend l intégralité de votre caution en cash.',
+    desc: 'À l échéance, l état des lieux de retour documente la restitution. Le dépôt peut ensuite être libéré ou faire l objet d une retenue validée.',
     icon: FileCheck,
-    detail: 'Garantie anti-litige : En cas de désaccord, l arbitrage Lokiini intervient sous 24h sur la base des photos scellées.'
+    detail: 'Traitement des litiges : En cas de désaccord, l équipe Lokiini examine le dossier sur la base des photos contradictoires et du contrat.'
   }
 ];
 

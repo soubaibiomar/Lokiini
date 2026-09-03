@@ -1,192 +1,207 @@
 import uuid
-from datetime import datetime
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+from app.core.authorization import require_resource_access
 from app.core.database import get_db
-from app.models.models import Reservation, Article, User
+from app.models.models import Article, Reservation, User
+from app.routers.auth import get_current_user
 from app.schemas.contract_schemas import (
-    ContractSignRequest, ContractResponse, SignatureCertificateResponse
+    ContractEquipmentResponse,
+    ContractPartyResponse,
+    ContractResponse,
+    ContractSignRequest,
 )
 from app.services.contract_generator_service import contract_generator_service
-from app.services.signature_service import signature_service
-from app.routers.auth import get_current_user
 
-router = APIRouter(tags=["Baux Numériques DOC Art. 627+ & Signature Loi 53-05"])
 
-# 1. Génération & Consultation du Bail DOC
+router = APIRouter(tags=["Contrats de location"])
+
+CONTRACT_READY_STATUSES = {
+    "confirmee",
+    "prete_remise",
+    "en_cours",
+    "en_attente_validation",
+    "termine",
+    "en_litige",
+    "resolu",
+}
+
+
 @router.get("/contrats/{booking_id}", response_model=ContractResponse)
 @router.get("/contracts/{booking_id}", response_model=ContractResponse)
 async def get_booking_contract(
     booking_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Génère et affiche le texte officiel du bail de location régie par les Art. 627+ du DOC Maroc."""
+    """Generate a reviewable contract from an authorized confirmed reservation."""
     result = await db.execute(select(Reservation).where(Reservation.id == booking_id))
     booking = result.scalars().first()
     if not booking:
-        raise HTTPException(status_code=404, detail="Réservation introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Réservation introuvable.")
 
-    if current_user.id not in [booking.locataire_id, booking.loueur_id] and current_user.user_role != "admin":
-        raise HTTPException(status_code=403, detail="Non autorisé.")
+    require_resource_access(current_user, booking.locataire_id, booking.loueur_id)
+    if booking.statut not in CONTRACT_READY_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "CONTRACT_NOT_READY",
+                "message": "Le contrat sera généré lorsque la réservation sera confirmée.",
+            },
+        )
 
-    art_res = await db.execute(select(Article).where(Article.id == booking.article_id))
-    article = art_res.scalars().first()
+    article = (await db.execute(select(Article).where(Article.id == booking.article_id))).scalars().first()
+    renter = (await db.execute(select(User).where(User.id == booking.locataire_id))).scalars().first()
+    owner = (await db.execute(select(User).where(User.id == booking.loueur_id))).scalars().first()
+    if not article or not renter or not owner:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "CONTRACT_DATA_INCOMPLETE",
+                "message": "Les informations nécessaires au contrat sont incomplètes.",
+            },
+        )
 
-    loc_res = await db.execute(select(User).where(User.id == booking.locataire_id))
-    locataire = loc_res.scalars().first()
-
-    loueur_res = await db.execute(select(User).where(User.id == booking.loueur_id))
-    loueur = loueur_res.scalars().first()
-
+    booking_data = {
+        "id": str(booking.id),
+        "nombre_jours": booking.total_days,
+        "date_debut": booking.date_debut.isoformat(),
+        "date_fin": booking.date_fin.isoformat(),
+        "prix_total": float(booking.prix_total),
+        "montant_caution": float(booking.montant_caution),
+        "payment_method": booking.payment_method,
+        "deposit_method": "cash",
+    }
+    article_data = {
+        "titre": article.titre,
+        "categorie": article.categorie,
+        "description": article.description,
+    }
+    renter_data = {
+        "nom_complet": renter.nom_complet,
+        "cin_number": renter.cin_number,
+        "company_ice": renter.company_ice,
+        "telephone": renter.telephone,
+        "city": renter.city,
+    }
+    owner_data = {
+        "nom_complet": owner.nom_complet,
+        "cin_number": owner.cin_number,
+        "company_ice": owner.company_ice,
+        "telephone": owner.telephone,
+        "city": owner.city,
+    }
     contract_data = contract_generator_service.generate_lease_contract(
-        booking_data={
-            "id": str(booking.id),
-            "nombre_jours": booking.nombre_jours,
-            "date_debut": booking.date_debut.isoformat(),
-            "date_fin": booking.date_fin.isoformat(),
-            "prix_total": float(booking.prix_total),
-            "montant_caution": float(booking.montant_caution)
-        },
-        article_data={
-            "titre": article.titre if article else "Matériel",
-            "categorie": article.categorie if article else "Outillage",
-            "description": article.description if article else ""
-        },
-        renter_data={
-            "nom_complet": locataire.nom_complet if locataire else "Locataire",
-            "cin_number": getattr(locataire, "cin_number", None),
-            "company_ice": locataire.company_ice if locataire else None,
-            "telephone": locataire.telephone if locataire else "",
-            "city": locataire.city if locataire else "Casablanca"
-        },
-        owner_data={
-            "nom_complet": loueur.nom_complet if loueur else "Loueur",
-            "cin_number": getattr(loueur, "cin_number", None),
-            "company_ice": loueur.company_ice if loueur else None,
-            "telephone": loueur.telephone if loueur else "",
-            "city": loueur.city if loueur else "Casablanca"
-        }
+        booking_data=booking_data,
+        article_data=article_data,
+        renter_data=renter_data,
+        owner_data=owner_data,
     )
 
+    # The current database has only one legacy aggregate signature field. It
+    # cannot prove which party signed, so per-party completion remains false.
     return ContractResponse(
         booking_id=booking.id,
+        booking_status=booking.statut,
         contract_number=contract_data["contract_number"],
         contract_text=contract_data["contract_text"],
         contract_sha256=contract_data["contract_sha256"],
         applicable_law=contract_data["applicable_law"],
-        est_signe_locataire=bool(booking.bail_signe_le),
-        est_signe_loueur=bool(booking.bail_signe_le),
-        signe_le=booking.bail_signe_le,
-        genere_le=contract_data["generated_at"]
+        language=contract_data["language"],
+        available_languages=contract_data["available_languages"],
+        owner=ContractPartyResponse(
+            user_id=owner.id,
+            name=owner.nom_complet,
+            city=owner.city,
+            company_name=owner.company_name,
+            company_ice=owner.company_ice,
+        ),
+        renter=ContractPartyResponse(
+            user_id=renter.id,
+            name=renter.nom_complet,
+            city=renter.city,
+            company_name=renter.company_name,
+            company_ice=renter.company_ice,
+        ),
+        equipment=ContractEquipmentResponse(
+            article_id=article.id,
+            title=article.titre,
+            category=article.categorie,
+            description=article.description,
+        ),
+        start_date=booking.date_debut,
+        end_date=booking.date_fin,
+        number_of_days=booking.total_days,
+        rental_price_mad=float(booking.prix_total),
+        deposit_amount_mad=float(booking.montant_caution),
+        payment_method=contract_data["payment_method_label"],
+        deposit_method=contract_data["deposit_method_label"],
+        responsibilities=contract_data["responsibilities"],
+        important_conditions=contract_data["important_conditions"],
+        signature_available=False,
+        owner_signature_status="unavailable",
+        renter_signature_status="unavailable",
+        completed=False,
+        document_url=booking.contrat_pdf_url,
+        est_signe_locataire=False,
+        est_signe_loueur=False,
+        signe_le=None,
+        genere_le=contract_data["generated_at"],
     )
 
-# 2. Signature Électronique du Bail (Loi 53-05)
-@router.post("/contrats/{booking_id}/signer", response_model=SignatureCertificateResponse)
-@router.post("/contracts/{booking_id}/sign", response_model=SignatureCertificateResponse)
+
+@router.post("/contrats/{booking_id}/signer", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+@router.post("/contracts/{booking_id}/sign", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
 async def sign_booking_contract(
     booking_id: uuid.UUID,
     payload: ContractSignRequest,
-    request: Request,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Appose la signature électronique qualifiée conforme à la Loi n° 53-05."""
+    """Reject signing until a professionally validated provider is configured."""
     if not payload.consentement_explicite:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le consentement explicite aux termes du bail DOC est obligatoire."
+            detail={"code": "CONTRACT_CONSENT_REQUIRED", "message": "Vous devez confirmer avoir lu le contrat."},
         )
-
-    result = await db.execute(select(Reservation).where(Reservation.id == booking_id))
-    booking = result.scalars().first()
+    booking = (
+        await db.execute(select(Reservation).where(Reservation.id == booking_id))
+    ).scalars().first()
     if not booking:
-        raise HTTPException(status_code=404, detail="Réservation introuvable.")
-
-    if current_user.id not in [booking.locataire_id, booking.loueur_id] and current_user.user_role != "admin":
-        raise HTTPException(status_code=403, detail="Non autorisé à signer ce contrat.")
-
-    art_res = await db.execute(select(Article).where(Article.id == booking.article_id))
-    article = art_res.scalars().first()
-
-    loc_res = await db.execute(select(User).where(User.id == booking.locataire_id))
-    locataire = loc_res.scalars().first()
-
-    loueur_res = await db.execute(select(User).where(User.id == booking.loueur_id))
-    loueur = loueur_res.scalars().first()
-
-    contract_data = contract_generator_service.generate_lease_contract(
-        booking_data={
-            "id": str(booking.id),
-            "nombre_jours": booking.nombre_jours,
-            "date_debut": booking.date_debut.isoformat(),
-            "date_fin": booking.date_fin.isoformat(),
-            "prix_total": float(booking.prix_total),
-            "montant_caution": float(booking.montant_caution)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Réservation introuvable.")
+    require_resource_access(current_user, booking.locataire_id, booking.loueur_id)
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "code": "SIGNATURE_UNAVAILABLE",
+            "status": "pending",
+            "message": "Aucun prestataire de signature professionnellement validé n’est configuré.",
         },
-        article_data={"titre": article.titre if article else "Matériel", "categorie": article.categorie if article else "Outillage", "description": ""},
-        renter_data={"nom_complet": locataire.nom_complet if locataire else "Locataire", "telephone": locataire.telephone if locataire else ""},
-        owner_data={"nom_complet": loueur.nom_complet if loueur else "Loueur", "telephone": loueur.telephone if loueur else ""}
     )
 
-    user_role = "locataire" if current_user.id == booking.locataire_id else "loueur"
-    ip = payload.ip_address or request.client.host if request.client else "127.0.0.1"
 
-    # Scellement cryptographique de la signature
-    sig_seal = signature_service.seal_signature(
-        contract_sha256=contract_data["contract_sha256"],
-        user_id=str(current_user.id),
-        user_role=user_role,
-        ip_address=ip
-    )
-
-    # Mise à jour du timestamp de signature sur la réservation
-    booking.bail_signe_le = sig_seal["timestamp"]
-    booking.modifie_le = datetime.utcnow()
-    await db.commit()
-
-    return SignatureCertificateResponse(
-        certificate_id=f"CERT-{str(booking.id)[:8].upper()}-{sig_seal['signature_seal'][:12].upper()}",
-        contract_number=contract_data["contract_number"],
-        booking_id=booking.id,
-        contract_sha256=contract_data["contract_sha256"],
-        signataire_locataire=locataire.nom_complet if locataire else "Locataire Certifié Didit",
-        signataire_loueur=loueur.nom_complet if loueur else "Loueur Certifié Didit",
-        date_scellement=sig_seal["timestamp"],
-        conforme_loi_53_05=True,
-        autorite_certification="Lokiini Trust Authority Maroc (Loi 53-05)"
-    )
-
-# 3. Certificat de Signature
-@router.get("/contrats/{booking_id}/certificat", response_model=SignatureCertificateResponse)
-@router.get("/contracts/{booking_id}/certificate", response_model=SignatureCertificateResponse)
+@router.get("/contrats/{booking_id}/certificat", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+@router.get("/contracts/{booking_id}/certificate", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
 async def get_signature_certificate(
     booking_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Télécharge le certificat d'authenticité et l'empreinte SHA-256 du bail signé."""
-    result = await db.execute(select(Reservation).where(Reservation.id == booking_id))
-    booking = result.scalars().first()
+    """Return no certificate while qualified signing is unavailable."""
+    booking = (
+        await db.execute(select(Reservation).where(Reservation.id == booking_id))
+    ).scalars().first()
     if not booking:
-        raise HTTPException(status_code=404, detail="Réservation introuvable.")
-
-    loc_res = await db.execute(select(User).where(User.id == booking.locataire_id))
-    locataire = loc_res.scalars().first()
-
-    loueur_res = await db.execute(select(User).where(User.id == booking.loueur_id))
-    loueur = loueur_res.scalars().first()
-
-    return SignatureCertificateResponse(
-        certificate_id=f"CERT-{str(booking.id)[:8].upper()}-QUALIFIED",
-        contract_number=f"BAIL-LOKIINI-{str(booking.id)[:8].upper()}-{datetime.utcnow().year}",
-        booking_id=booking.id,
-        contract_sha256=f"sha256_mock_hash_{str(booking.id)[:8]}",
-        signataire_locataire=locataire.nom_complet if locataire else "Locataire Certifié Didit",
-        signataire_loueur=loueur.nom_complet if loueur else "Loueur Certifié Didit",
-        date_scellement=booking.bail_signe_le or datetime.utcnow(),
-        conforme_loi_53_05=True,
-        autorite_certification="Lokiini Trust Authority Maroc (Loi 53-05)"
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Réservation introuvable.")
+    require_resource_access(current_user, booking.locataire_id, booking.loueur_id)
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "code": "CERTIFICATE_UNAVAILABLE",
+            "status": "pending",
+            "message": "Aucun certificat de signature qualifiée n’est disponible.",
+        },
     )

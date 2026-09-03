@@ -1,12 +1,15 @@
 import uuid
+from pathlib import Path
 from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import text
+from sqlalchemy import case, false, func, or_, text
 from app.core.database import get_db
-from app.models.models import Article, Equipment, User
+from app.core.config import settings
+from app.models.models import Article, Avis, Equipment, User
 from app.schemas.equipment_schemas import (
     EquipmentCreateRequest, EquipmentUpdateRequest,
     EquipmentResponse, CategoryCountResponse
@@ -18,38 +21,42 @@ from app.routers.auth import get_current_user
 
 router = APIRouter(tags=["Catalogue Matériel & Recherche Géospatiale PostGIS"])
 
+EQUIPMENT_IMAGE_TYPES = {
+    "image/jpeg": (".jpg", lambda data: data.startswith(b"\xff\xd8\xff")),
+    "image/png": (".png", lambda data: data.startswith(b"\x89PNG\r\n\x1a\n")),
+    "image/webp": (".webp", lambda data: data.startswith(b"RIFF") and data[8:12] == b"WEBP"),
+}
+
 # 1. Catégories phares avec compteurs
 @router.get("/articles/categories", response_model=List[CategoryCountResponse])
 @router.get("/equipment/categories", response_model=List[CategoryCountResponse])
 async def get_equipment_categories(db: AsyncSession = Depends(get_db)):
     """Liste les catégories de matériel phares avec les compteurs d'articles actifs."""
-    categories_meta = [
-        {"categorie": "tools", "nom_affiche": "Outils & Bricolage", "icone": "🛠️"},
-        {"categorie": "btp", "nom_affiche": "BTP & Chantier", "icone": "🏗️"},
-        {"categorie": "audiovisuel", "nom_affiche": "Électronique & Vidéo", "icone": "📷"},
-        {"categorie": "evenementiel", "nom_affiche": "Fête & Événementiel", "icone": "🎉"},
-        {"categorie": "outdoor", "nom_affiche": "Outdoor & Camping", "icone": "🏕️"},
-        {"categorie": "cleaning", "nom_affiche": "Nettoyage & Entretien", "icone": "✨"},
-    ]
-    
-    counts = {}
-    try:
-        res = await db.execute(
-            text("SELECT categorie, COUNT(*) as count FROM articles WHERE statut = 'actif' GROUP BY categorie")
-        )
-        for row in res.fetchall():
-            counts[row[0]] = row[1]
-    except Exception:
-        pass
-        
+    labels = {
+        "tools": "Outils & Bricolage",
+        "btp": "BTP & Chantier",
+        "audiovisuel": "Électronique & Vidéo",
+        "evenementiel": "Fête & Événementiel",
+        "outdoor": "Outdoor & Camping",
+        "cleaning": "Nettoyage & Entretien",
+    }
+    res = await db.execute(
+        text("""
+            SELECT categorie, COUNT(*) AS count
+            FROM articles
+            WHERE statut = 'actif' AND is_available IS TRUE
+            GROUP BY categorie
+            ORDER BY count DESC, categorie ASC
+        """)
+    )
     return [
         CategoryCountResponse(
-            categorie=c["categorie"],
-            nom_affiche=c["nom_affiche"],
-            icone=c["icone"],
-            total_articles=counts.get(c["categorie"], 2) # fallback
+            categorie=row.categorie,
+            nom_affiche=labels.get(row.categorie, row.categorie.replace("_", " ").title()),
+            icone=row.categorie,
+            total_articles=row.count,
         )
-        for c in categories_meta
+        for row in res.fetchall()
     ]
 
 # 2. Recherche géolocalisée par rayon PostGIS
@@ -58,11 +65,14 @@ async def get_equipment_categories(db: AsyncSession = Depends(get_db)):
 async def search_equipment_geo(
     lat: float = Query(..., description="Latitude GPS"),
     lng: float = Query(..., description="Longitude GPS"),
-    radius_km: float = Query(25.0, description="Rayon de recherche en km"),
+    radius_km: float = Query(25.0, ge=1, le=200, description="Rayon de recherche en km"),
+    q: Optional[str] = Query(None, description="Recherche textuelle"),
     categorie: Optional[str] = Query(None),
     city: Optional[str] = Query(None),
     prix_min: Optional[float] = Query(None),
     prix_max: Optional[float] = Query(None),
+    disponible: bool = Query(True),
+    verifie: bool = Query(False),
     limit: int = Query(50, le=100),
     offset: int = Query(0),
     db: AsyncSession = Depends(get_db)
@@ -73,14 +83,18 @@ async def search_equipment_geo(
         lat=lat,
         lng=lng,
         radius_km=radius_km,
+        q=q,
         categorie=categorie,
         city=city,
         prix_min=prix_min,
         prix_max=prix_max,
+        disponible=disponible,
+        verifie=verifie,
         limit=limit,
         offset=offset
     )
-    return {"statut": "succes", "total": len(results), "donnees": results}
+    total = int(results[0].pop("total_count")) if results else 0
+    return {"statut": "succes", "total": total, "donnees": results}
 
 # 3. Liste filtrée des articles / annonces
 @router.get("/articles")
@@ -91,34 +105,63 @@ async def list_equipment(
     city: Optional[str] = Query(None),
     prix_min: Optional[float] = Query(None),
     prix_max: Optional[float] = Query(None),
+    disponible: bool = Query(True),
+    verifie: bool = Query(False),
     limit: int = Query(50, le=100),
     offset: int = Query(0),
     db: AsyncSession = Depends(get_db)
 ):
     """Liste filtrée des annonces de matériel avec pagination et filtres."""
-    query = select(Article).where(Article.statut == "actif")
+    conditions = [Article.statut == "actif"]
 
     if categorie:
-        query = query.where(Article.categorie == categorie)
+        conditions.append(Article.categorie == categorie)
     if city:
-        query = query.where(Article.city.ilike(f"%{city}%"))
+        conditions.append(Article.city.ilike(f"%{city}%"))
     if prix_min is not None:
-        query = query.where(Article.prix_par_jour >= prix_min)
+        conditions.append(Article.prix_par_jour >= prix_min)
     if prix_max is not None:
-        query = query.where(Article.prix_par_jour <= prix_max)
-    if q:
-        query = query.where((Article.titre.ilike(f"%{q}%")) | (Article.description.ilike(f"%{q}%")))
+        conditions.append(Article.prix_par_jour <= prix_max)
+    if disponible:
+        conditions.append(Article.is_available.is_(True))
+    if verifie:
+        conditions.append(User.statut_verification == "verified")
 
-    query = query.order_by(Article.cree_le.desc()).limit(limit).offset(offset)
+    relevance_order = None
+    if q:
+        meilisearch_ids = await meilisearch_service.search_articles(q, limit=100)
+        if meilisearch_ids is None:
+            conditions.append(or_(Article.titre.ilike(f"%{q}%"), Article.description.ilike(f"%{q}%")))
+        elif not meilisearch_ids:
+            conditions.append(false())
+        else:
+            ranked_ids = []
+            for article_id in meilisearch_ids:
+                try:
+                    ranked_ids.append(uuid.UUID(article_id))
+                except (TypeError, ValueError, AttributeError):
+                    continue
+            if not ranked_ids:
+                conditions.append(false())
+            else:
+                conditions.append(Article.id.in_(ranked_ids))
+                relevance_order = case(
+                    {article_id: rank for rank, article_id in enumerate(ranked_ids)},
+                    value=Article.id,
+                    else_=len(ranked_ids),
+                )
+
+    count_query = select(func.count(Article.id)).join(User, User.id == Article.loueur_id).where(*conditions)
+    total = int((await db.execute(count_query)).scalar_one())
+
+    query = select(Article, User).join(User, User.id == Article.loueur_id).where(*conditions)
+    query = query.order_by(relevance_order, Article.cree_le.desc()) if relevance_order is not None else query.order_by(Article.cree_le.desc())
+    query = query.limit(limit).offset(offset)
     result = await db.execute(query)
-    articles = result.scalars().all()
+    rows = result.all()
 
     response_items = []
-    for a in articles:
-        # Get loueur details
-        loueur_res = await db.execute(select(User).where(User.id == a.loueur_id))
-        loueur = loueur_res.scalars().first()
-        
+    for a, loueur in rows:
         response_items.append({
             "id": str(a.id),
             "loueur_id": str(a.loueur_id),
@@ -137,13 +180,15 @@ async def list_equipment(
             "city": a.city or "Casablanca",
             "adresse_approximative": a.adresse_approximative,
             "statut": a.statut,
-            "loueur_nom": loueur.nom_complet if loueur else "Loueur Lokiini",
-            "loueur_note": float(loueur.note) if loueur and loueur.note else 5.0,
-            "loueur_statut_kyc": loueur.statut_verification if loueur else "en_attente",
+            "is_available": bool(a.is_available),
+            "is_verified": bool(a.is_verified),
+            "discount_pct": int(a.discount_pct or 0),
+            "loueur_nom": loueur.nom_complet,
+            "loueur_statut_kyc": loueur.statut_verification,
             "cree_le": a.cree_le.isoformat() if a.cree_le else None
         })
 
-    return {"statut": "succes", "total": len(response_items), "donnees": response_items}
+    return {"statut": "succes", "total": total, "donnees": response_items}
 
 # 4. Mes annonces (Loueur connecté)
 @router.get("/articles/my-listings")
@@ -157,7 +202,104 @@ async def get_my_listings(
         select(Article).where(Article.loueur_id == current_user.id, Article.statut != "archive").order_by(Article.cree_le.desc())
     )
     articles = result.scalars().all()
-    return articles
+    return [{
+        "id": str(article.id),
+        "loueur_id": str(article.loueur_id),
+        "titre": article.titre,
+        "description": article.description,
+        "categorie": article.categorie,
+        "prix_par_jour": float(article.prix_par_jour),
+        "montant_caution": float(article.montant_caution),
+        "photos": article.photos or [],
+        "specs": article.specs or {},
+        "calendrier_disponibilite": article.calendrier_disponibilite or {},
+        "city": article.city,
+        "statut": article.statut,
+        "is_available": bool(article.is_available),
+        "is_verified": bool(article.is_verified),
+        "cree_le": article.cree_le.isoformat() if article.cree_le else None,
+    } for article in articles]
+
+
+@router.post("/articles/photos", status_code=status.HTTP_201_CREATED)
+async def upload_equipment_photo(
+    photo: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """Store one authenticated owner's raster listing photo in durable media storage."""
+    image_type = EQUIPMENT_IMAGE_TYPES.get((photo.content_type or "").lower())
+    if not image_type:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail={"code": "EQUIPMENT_PHOTO_TYPE_UNSUPPORTED", "message": "Formats acceptés : JPEG, PNG ou WebP."},
+        )
+
+    extension, signature_matches = image_type
+    media_directory = Path(settings.EQUIPMENT_MEDIA_DIR).resolve()
+    media_directory.mkdir(parents=True, exist_ok=True)
+    filename = f"{current_user.id}_{uuid.uuid4().hex}{extension}"
+    target = (media_directory / filename).resolve()
+    if target.parent != media_directory:
+        raise HTTPException(status_code=400, detail="Nom de fichier invalide.")
+
+    total_bytes = 0
+    first_bytes = b""
+    try:
+        with target.open("wb") as destination:
+            while chunk := await photo.read(1024 * 1024):
+                if not first_bytes:
+                    first_bytes = chunk[:16]
+                total_bytes += len(chunk)
+                if total_bytes > settings.EQUIPMENT_MEDIA_MAX_BYTES:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail={"code": "EQUIPMENT_PHOTO_TOO_LARGE", "message": "La photo dépasse la taille maximale autorisée."},
+                    )
+                destination.write(chunk)
+        if not first_bytes or not signature_matches(first_bytes):
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail={"code": "EQUIPMENT_PHOTO_CONTENT_INVALID", "message": "Le contenu du fichier ne correspond pas à une image valide."},
+            )
+    except Exception:
+        target.unlink(missing_ok=True)
+        raise
+    finally:
+        await photo.close()
+
+    return {
+        "filename": filename,
+        "url": f"{settings.API_V1_STR}/media/equipment/{filename}",
+        "content_type": photo.content_type,
+        "size_bytes": total_bytes,
+    }
+
+
+@router.delete("/articles/photos/{filename}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_equipment_photo(
+    filename: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Remove an uploaded photo only when it belongs to the authenticated owner."""
+    if Path(filename).name != filename or not filename.startswith(f"{current_user.id}_"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Suppression de photo interdite.")
+    media_directory = Path(settings.EQUIPMENT_MEDIA_DIR).resolve()
+    target = (media_directory / filename).resolve()
+    if target.parent != media_directory:
+        raise HTTPException(status_code=400, detail="Nom de fichier invalide.")
+    target.unlink(missing_ok=True)
+
+
+@router.get("/media/equipment/{filename}", include_in_schema=False)
+async def get_equipment_photo(filename: str):
+    """Serve public listing media using immutable filenames."""
+    if Path(filename).name != filename:
+        raise HTTPException(status_code=404, detail="Photo introuvable.")
+    media_directory = Path(settings.EQUIPMENT_MEDIA_DIR).resolve()
+    target = (media_directory / filename).resolve()
+    if target.parent != media_directory or not target.is_file():
+        raise HTTPException(status_code=404, detail="Photo introuvable.")
+    return FileResponse(target, headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 # 5. Détail d'une annonce
 @router.get("/articles/{article_id}")
@@ -177,9 +319,19 @@ async def get_equipment_detail(
             detail={"code": "EQUIPMENT_404", "message": "Annonce de matériel introuvable."}
         )
 
-    # Récupération profil loueur
+    # Récupération du profil public et des signaux de confiance réels du loueur.
     loueur_res = await db.execute(select(User).where(User.id == article.loueur_id))
     loueur = loueur_res.scalars().first()
+    review_stats = await db.execute(
+        select(func.count(Avis.id), func.avg(Avis.note)).where(Avis.avise_id == article.loueur_id)
+    )
+    review_count, review_average = review_stats.one()
+    listing_count = int((await db.execute(
+        select(func.count(Article.id)).where(
+            Article.loueur_id == article.loueur_id,
+            Article.statut == "actif",
+        )
+    )).scalar_one())
 
     return {
         "id": str(article.id),
@@ -196,15 +348,23 @@ async def get_equipment_detail(
         "kyc_requis": bool(article.kyc_requis),
         "photos": article.photos or [],
         "specs": article.specs or {},
+        "calendrier_disponibilite": article.calendrier_disponibilite or {},
         "city": article.city,
         "adresse_approximative": article.adresse_approximative,
         "statut": article.statut,
+        "is_available": bool(article.is_available),
+        "is_verified": bool(article.is_verified),
+        "discount_pct": int(article.discount_pct or 0),
         "loueur": {
             "id": str(loueur.id) if loueur else None,
-            "nom": loueur.nom_complet if loueur else "Loueur Lokiini",
-            "note": float(loueur.note) if loueur and loueur.note else 5.0,
-            "badge_verifie": loueur.statut_verification == "approuve" if loueur else False,
-            "temps_reponse_minutes": loueur.temps_reponse_minutes if loueur else 30
+            "nom": loueur.nom_complet if loueur else "Profil indisponible",
+            "avatar_url": loueur.avatar_url if loueur else None,
+            "note": round(float(review_average), 1) if review_average is not None else None,
+            "nombre_avis": int(review_count or 0),
+            "badge_verifie": loueur.statut_verification == "verified" if loueur else False,
+            "date_inscription": loueur.cree_le.isoformat() if loueur and loueur.cree_le else None,
+            "total_annonces": listing_count,
+            "company_name": loueur.company_name if loueur else None,
         },
         "cree_le": article.cree_le.isoformat() if article.cree_le else None
     }
@@ -228,7 +388,11 @@ async def create_equipment(
 
     new_id = uuid.uuid4()
     # 2. Assignation coordonnées WKT PostGIS
-    point_wkt = f"SRID=4326;POINT({payload.lng} {payload.lat})"
+    point_wkt = (
+        f"SRID=4326;POINT({payload.lng} {payload.lat})"
+        if payload.lat is not None and payload.lng is not None
+        else None
+    )
 
     article = Article(
         id=new_id,
@@ -237,17 +401,15 @@ async def create_equipment(
         description=payload.description,
         categorie=payload.categorie,
         prix_par_jour=payload.prix_par_jour,
-        prix_par_semaine=payload.prix_par_semaine,
-        prix_par_mois=payload.prix_par_mois,
         montant_caution=payload.montant_caution,
-        mode_caution=payload.mode_caution or ("cash" if risk_info["caution_obligatoire"] else "non_requis"),
         niveau_risque=risk_info["niveau_risque"],
-        kyc_requis=risk_info["kyc_obligatoire"],
         photos=payload.photos or [],
-        specs=payload.specs or {},
-        coordonnees=point_wkt,
+        specs_json=payload.specs or {},
+        calendrier_disponibilite=payload.calendrier_disponibilite or {},
+        is_available=payload.is_available,
+        localisation=point_wkt,
         city=payload.city or "Casablanca",
-        adresse_approximative=payload.adresse_approximative or f"Quartier {payload.city}",
+        adresse=payload.adresse_approximative or f"Quartier {payload.city or 'Casablanca'}",
         statut="actif",
         cree_le=datetime.utcnow()
     )
@@ -298,15 +460,14 @@ async def update_equipment(
     if payload.description is not None: article.description = payload.description
     if payload.categorie is not None: article.categorie = payload.categorie
     if payload.prix_par_jour is not None: article.prix_par_jour = payload.prix_par_jour
-    if payload.prix_par_semaine is not None: article.prix_par_semaine = payload.prix_par_semaine
-    if payload.prix_par_mois is not None: article.prix_par_mois = payload.prix_par_mois
     if payload.montant_caution is not None: article.montant_caution = payload.montant_caution
-    if payload.mode_caution is not None: article.mode_caution = payload.mode_caution
     if payload.photos is not None: article.photos = payload.photos
-    if payload.specs is not None: article.specs = payload.specs
+    if payload.specs is not None: article.specs_json = payload.specs
     if payload.statut is not None: article.statut = payload.statut
     if payload.city is not None: article.city = payload.city
-    if payload.adresse_approximative is not None: article.adresse_approximative = payload.adresse_approximative
+    if payload.adresse_approximative is not None: article.adresse = payload.adresse_approximative
+    if payload.is_available is not None: article.is_available = payload.is_available
+    if payload.calendrier_disponibilite is not None: article.calendrier_disponibilite = payload.calendrier_disponibilite
 
     article.modifie_le = datetime.utcnow()
     await db.commit()

@@ -5,12 +5,11 @@ from pydantic import BaseModel
 
 class UserProfileResponse(BaseModel):
     id: uuid.UUID
-    email: str
-    telephone: str
+    email: Optional[str] = None
+    telephone: Optional[str] = None
     nom_complet: str
     avatar_url: Optional[str] = None
     statut_verification: str
-    kyc_liveness_score: float
     note: float
     temps_reponse_minutes: int
     user_role: str

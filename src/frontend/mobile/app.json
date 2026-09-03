@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Lokiini a besoin de la caméra pour la vérification KYC biométrique et les états des lieux vidéo contradictoires."
+        "NSCameraUsageDescription": "Lokiini a besoin de la caméra pour les états des lieux vidéo contradictoires."
       }
     },
     "android": {

@@ -4,6 +4,28 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:static && npm run test:components",
+    "test:static": "node --test",
+    "test:components": "vitest run",
+    "api:types": "openapi-typescript ../shared/api/openapi.json -o ../shared/api/openapi.d.ts --alphabetize --immutable",
+    "api:types:check": "openapi-typescript ../shared/api/openapi.json -o ../shared/api/openapi.d.ts --alphabetize --immutable --check",
+    "test:api-client": "node --test src/services/httpClient.test.mjs",
+    "test:design-system": "node --test src/components/ui/designSystem.test.mjs",
+    "test:homepage": "node --test src/components/homepage.test.mjs",
+    "test:catalogue": "node --test src/components/catalogue.test.mjs",
+    "test:equipment-detail": "node --test src/components/equipmentDetail.test.mjs",
+    "test:reservation-flow": "node --test src/components/reservationFlow.test.mjs",
+    "test:account-dashboard": "node --test src/components/accountDashboard.test.mjs",
+    "test:equipment-publishing": "node --test src/components/equipmentPublishing.test.mjs",
+    "test:kyc-experience": "node --test src/components/kycExperience.test.mjs",
+    "test:contract-experience": "node --test src/components/contractExperience.test.mjs",
+    "test:inspection-experience": "node --test src/components/inspectionExperience.test.mjs",
+    "test:dispute-experience": "node --test src/components/disputeExperience.test.mjs",
+    "test:messaging-experience": "node --test src/components/messagingExperience.test.mjs",
+    "test:notification-experience": "node --test src/components/notificationExperience.test.mjs",
+    "test:i18n": "node --test src/i18n/i18n.test.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
@@ -17,10 +39,21 @@
     "tailwind-merge": "^2.3.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^4.3.0",
+    "@eslint/js": "^10.0.1",
     "autoprefixer": "^10.4.19",
+    "eslint": "^10.9.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "jsdom": "^25.0.1",
+    "openapi-typescript": "^7.12.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
-    "vite": "^5.2.11"
+    "typescript": "^5.9.3",
+    "vite": "^5.2.11",
+    "vitest": "^2.1.9"
   }
 }

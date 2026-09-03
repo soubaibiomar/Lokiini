@@ -1,7 +1,7 @@
 {
   "type": "excalidraw",
   "version": 2,
-  "source": "https://excalidraw.com",
+  "source": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor",
   "elements": [
     {
       "id": "rect_572946",
@@ -24,13 +24,14 @@
         "type": 3
       },
       "seed": 386594,
-      "version": 1,
-      "versionNonce": 793732,
+      "version": 78,
+      "versionNonce": 683545338,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397146857,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a0"
     },
     {
       "id": "text_391257",
@@ -51,11 +52,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 581222,
-      "version": 1,
-      "versionNonce": 87205,
+      "version": 2,
+      "versionNonce": 1148001594,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "LOKIINI — Architecture Frontend Web (Composants React 18, État Global & Services API)",
@@ -66,7 +67,9 @@
       "baseline": 15.3,
       "containerId": null,
       "originalText": "LOKIINI — Architecture Frontend Web (Composants React 18, État Global & Services API)",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "a1",
+      "autoResize": true
     },
     {
       "id": "text_116278",
@@ -87,11 +90,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 725086,
-      "version": 1,
-      "versionNonce": 108631,
+      "version": 2,
+      "versionNonce": 1516890982,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Hiérarchie des composants, gestion de l'état asynchrone, intégration Tailwind CSS et connecteurs API FastAPI",
@@ -102,7 +105,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "Hiérarchie des composants, gestion de l'état asynchrone, intégration Tailwind CSS et connecteurs API FastAPI",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "a2",
+      "autoResize": true
     },
     {
       "id": "rect_204156",
@@ -125,13 +130,14 @@
         "type": 3
       },
       "seed": 940186,
-      "version": 1,
-      "versionNonce": 309955,
+      "version": 2,
+      "versionNonce": 1242129914,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a3"
     },
     {
       "id": "text_455503",
@@ -152,11 +158,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 374523,
-      "version": 1,
-      "versionNonce": 84687,
+      "version": 2,
+      "versionNonce": 1109626534,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "1. Composant Racine & Barre de Navigation (App.jsx & Navbar.jsx)",
@@ -167,7 +173,9 @@
       "baseline": 11.9,
       "containerId": null,
       "originalText": "1. Composant Racine & Barre de Navigation (App.jsx & Navbar.jsx)",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "a4",
+      "autoResize": true
     },
     {
       "id": "rect_378826",
@@ -190,13 +198,14 @@
         "type": 3
       },
       "seed": 900371,
-      "version": 1,
-      "versionNonce": 836889,
+      "version": 2,
+      "versionNonce": 245274298,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a5"
     },
     {
       "id": "text_514462",
@@ -217,11 +226,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 840843,
-      "version": 1,
-      "versionNonce": 937193,
+      "version": 2,
+      "versionNonce": 558287334,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "App.jsx (Composant Racine)",
@@ -232,7 +241,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "App.jsx (Composant Racine)",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "a6",
+      "autoResize": true
     },
     {
       "id": "text_733388",
@@ -240,7 +251,7 @@
       "x": 68,
       "y": 202,
       "width": 504,
-      "height": 27.0,
+      "height": 27,
       "angle": 0,
       "strokeColor": "#1E293B",
       "backgroundColor": "transparent",
@@ -253,11 +264,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 159047,
-      "version": 1,
-      "versionNonce": 847057,
+      "version": 2,
+      "versionNonce": 315600762,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Gestion des vues actives ('catalog' vs 'dashboard')\nSynchronisation des filtres et écoute de l'état KYC",
@@ -268,7 +279,9 @@
       "baseline": 8.5,
       "containerId": null,
       "originalText": "Gestion des vues actives ('catalog' vs 'dashboard')\nSynchronisation des filtres et écoute de l'état KYC",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "a7",
+      "autoResize": true
     },
     {
       "id": "rect_116704",
@@ -291,13 +304,14 @@
         "type": 3
       },
       "seed": 349247,
-      "version": 1,
-      "versionNonce": 812092,
+      "version": 2,
+      "versionNonce": 115383590,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a8"
     },
     {
       "id": "text_429696",
@@ -318,11 +332,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 758552,
-      "version": 1,
-      "versionNonce": 733874,
+      "version": 2,
+      "versionNonce": 1256173626,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "⚛️ React 18 Root",
@@ -333,14 +347,16 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "⚛️ React 18 Root",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "a9",
+      "autoResize": true
     },
     {
       "id": "rect_116509",
       "type": "rectangle",
       "x": 215.2,
       "y": 235,
-      "width": 122.0,
+      "width": 122,
       "height": 20,
       "angle": 0,
       "strokeColor": "#1971C2",
@@ -356,13 +372,14 @@
         "type": 3
       },
       "seed": 910508,
-      "version": 1,
-      "versionNonce": 526519,
+      "version": 2,
+      "versionNonce": 408815718,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aA"
     },
     {
       "id": "text_504252",
@@ -383,11 +400,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 595277,
-      "version": 1,
-      "versionNonce": 517713,
+      "version": 2,
+      "versionNonce": 716282106,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "🌐 Router Switch",
@@ -398,7 +415,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "🌐 Router Switch",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aB",
+      "autoResize": true
     },
     {
       "id": "rect_778620",
@@ -421,13 +440,14 @@
         "type": 3
       },
       "seed": 574025,
-      "version": 1,
-      "versionNonce": 390721,
+      "version": 2,
+      "versionNonce": 1166805926,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aC"
     },
     {
       "id": "text_908536",
@@ -448,11 +468,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 817290,
-      "version": 1,
-      "versionNonce": 773339,
+      "version": 2,
+      "versionNonce": 835217850,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Navbar.jsx (En-tête Sticky)",
@@ -463,7 +483,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "Navbar.jsx (En-tête Sticky)",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aD",
+      "autoResize": true
     },
     {
       "id": "text_468904",
@@ -471,7 +493,7 @@
       "x": 618,
       "y": 202,
       "width": 534,
-      "height": 27.0,
+      "height": 27,
       "angle": 0,
       "strokeColor": "#1E293B",
       "backgroundColor": "transparent",
@@ -484,11 +506,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 516398,
-      "version": 1,
-      "versionNonce": 912451,
+      "version": 2,
+      "versionNonce": 2090313446,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Indicateur d'identité vérifiée • Bouton de dépôt d'annonce\nNavigation fluide et bascule de profil locataire/loueur",
@@ -499,7 +521,9 @@
       "baseline": 8.5,
       "containerId": null,
       "originalText": "Indicateur d'identité vérifiée • Bouton de dépôt d'annonce\nNavigation fluide et bascule de profil locataire/loueur",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aE",
+      "autoResize": true
     },
     {
       "id": "rect_437934",
@@ -522,13 +546,14 @@
         "type": 3
       },
       "seed": 401014,
-      "version": 1,
-      "versionNonce": 754311,
+      "version": 2,
+      "versionNonce": 2001150586,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aF"
     },
     {
       "id": "text_206290",
@@ -549,11 +574,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 798779,
-      "version": 1,
-      "versionNonce": 302996,
+      "version": 2,
+      "versionNonce": 1577966118,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "🛡️ Statut CNDP Live",
@@ -564,7 +589,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "🛡️ Statut CNDP Live",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aG",
+      "autoResize": true
     },
     {
       "id": "rect_141652",
@@ -587,13 +614,14 @@
         "type": 3
       },
       "seed": 184364,
-      "version": 1,
-      "versionNonce": 538026,
+      "version": 2,
+      "versionNonce": 904971066,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aH"
     },
     {
       "id": "text_125260",
@@ -614,11 +642,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 45664,
-      "version": 1,
-      "versionNonce": 306925,
+      "version": 2,
+      "versionNonce": 1893442918,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "📍 Switch Espace Pro",
@@ -629,7 +657,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "📍 Switch Espace Pro",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aI",
+      "autoResize": true
     },
     {
       "id": "rect_618363",
@@ -652,13 +682,14 @@
         "type": 3
       },
       "seed": 373771,
-      "version": 1,
-      "versionNonce": 934758,
+      "version": 2,
+      "versionNonce": 1479035898,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aJ"
     },
     {
       "id": "text_621992",
@@ -679,11 +710,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 840673,
-      "version": 1,
-      "versionNonce": 562638,
+      "version": 2,
+      "versionNonce": 1447954598,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "services/api.js (Couche d'Accès API)",
@@ -694,7 +725,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "services/api.js (Couche d'Accès API)",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aK",
+      "autoResize": true
     },
     {
       "id": "text_115128",
@@ -702,7 +735,7 @@
       "x": 1198,
       "y": 202,
       "width": 674,
-      "height": 27.0,
+      "height": 27,
       "angle": 0,
       "strokeColor": "#1E293B",
       "backgroundColor": "transparent",
@@ -715,11 +748,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 124056,
-      "version": 1,
-      "versionNonce": 58600,
+      "version": 2,
+      "versionNonce": 66108602,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Client HTTP asynchrone pointant vers http://localhost:8000/api/v1\nFallback automatique sur mockData.js si backend en démarrage",
@@ -730,7 +763,9 @@
       "baseline": 8.5,
       "containerId": null,
       "originalText": "Client HTTP asynchrone pointant vers http://localhost:8000/api/v1\nFallback automatique sur mockData.js si backend en démarrage",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aL",
+      "autoResize": true
     },
     {
       "id": "rect_126670",
@@ -753,13 +788,14 @@
         "type": 3
       },
       "seed": 308651,
-      "version": 1,
-      "versionNonce": 466406,
+      "version": 2,
+      "versionNonce": 2115109862,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aM"
     },
     {
       "id": "text_270749",
@@ -780,11 +816,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 850484,
-      "version": 1,
-      "versionNonce": 808399,
+      "version": 2,
+      "versionNonce": 653071738,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "📡 Fetch / Fallback",
@@ -795,7 +831,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "📡 Fetch / Fallback",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aN",
+      "autoResize": true
     },
     {
       "id": "rect_905681",
@@ -818,13 +856,14 @@
         "type": 3
       },
       "seed": 345585,
-      "version": 1,
-      "versionNonce": 939583,
+      "version": 2,
+      "versionNonce": 1513396006,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aO"
     },
     {
       "id": "text_386245",
@@ -845,11 +884,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 463487,
-      "version": 1,
-      "versionNonce": 895110,
+      "version": 2,
+      "versionNonce": 39867962,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969741,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "⚡ Async Data",
@@ -860,7 +899,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "⚡ Async Data",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aP",
+      "autoResize": true
     },
     {
       "id": "rect_978034",
@@ -883,13 +924,14 @@
         "type": 3
       },
       "seed": 371780,
-      "version": 1,
-      "versionNonce": 770013,
+      "version": 2,
+      "versionNonce": 321045094,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aQ"
     },
     {
       "id": "text_986718",
@@ -910,11 +952,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 864080,
-      "version": 1,
-      "versionNonce": 408280,
+      "version": 2,
+      "versionNonce": 925728506,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "💡 EXPLICATION MÉTIER & TECHNIQUE (POURQUOI & COMMENT) :",
@@ -925,7 +967,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "💡 EXPLICATION MÉTIER & TECHNIQUE (POURQUOI & COMMENT) :",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aR",
+      "autoResize": true
     },
     {
       "id": "text_695198",
@@ -946,11 +990,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 827140,
-      "version": 1,
-      "versionNonce": 750788,
+      "version": 2,
+      "versionNonce": 1000965542,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "📌 POURQUOI (WHY) : Offrir une interface ultra-rapide avec tolérance aux pannes réseau :",
@@ -961,7 +1005,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "📌 POURQUOI (WHY) : Offrir une interface ultra-rapide avec tolérance aux pannes réseau :",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aS",
+      "autoResize": true
     },
     {
       "id": "text_939773",
@@ -982,11 +1028,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 984464,
-      "version": 1,
-      "versionNonce": 802262,
+      "version": 2,
+      "versionNonce": 1373081530,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "l'application charge instantanément le catalogue localement et se synchronise en",
@@ -997,7 +1043,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "l'application charge instantanément le catalogue localement et se synchronise en",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aT",
+      "autoResize": true
     },
     {
       "id": "text_105677",
@@ -1018,11 +1066,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 556431,
-      "version": 1,
-      "versionNonce": 639680,
+      "version": 2,
+      "versionNonce": 83222758,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "arrière-plan avec l'API FastAPI.",
@@ -1033,7 +1081,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "arrière-plan avec l'API FastAPI.",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aU",
+      "autoResize": true
     },
     {
       "id": "text_618583",
@@ -1054,11 +1104,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 892976,
-      "version": 1,
-      "versionNonce": 683890,
+      "version": 2,
+      "versionNonce": 1451329658,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "⚙️ COMMENT (HOW) : App.jsx déclenche un `useEffect` au chargement qui interroge",
@@ -1069,7 +1119,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "⚙️ COMMENT (HOW) : App.jsx déclenche un `useEffect` au chargement qui interroge",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aV",
+      "autoResize": true
     },
     {
       "id": "text_363286",
@@ -1090,11 +1142,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 826953,
-      "version": 1,
-      "versionNonce": 690957,
+      "version": 2,
+      "versionNonce": 1922356262,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "`getEquipmentList()`. Si l'API répond, les données fraîches de PostgreSQL sont",
@@ -1105,7 +1157,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "`getEquipmentList()`. Si l'API répond, les données fraîches de PostgreSQL sont",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aW",
+      "autoResize": true
     },
     {
       "id": "text_774501",
@@ -1126,11 +1180,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 339818,
-      "version": 1,
-      "versionNonce": 296403,
+      "version": 2,
+      "versionNonce": 1290692922,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "affichées, sinon le jeu de données initial prend le relais.",
@@ -1141,7 +1195,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "affichées, sinon le jeu de données initial prend le relais.",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aX",
+      "autoResize": true
     },
     {
       "id": "rect_959941",
@@ -1164,13 +1220,14 @@
         "type": 3
       },
       "seed": 671752,
-      "version": 1,
-      "versionNonce": 16117,
+      "version": 2,
+      "versionNonce": 242442086,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aY"
     },
     {
       "id": "text_145171",
@@ -1191,11 +1248,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 4692,
-      "version": 1,
-      "versionNonce": 216423,
+      "version": 2,
+      "versionNonce": 1283535354,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "2. Catalogue, Moteur de Recherche & Modales Interactives",
@@ -1206,7 +1263,9 @@
       "baseline": 11.9,
       "containerId": null,
       "originalText": "2. Catalogue, Moteur de Recherche & Modales Interactives",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aZ",
+      "autoResize": true
     },
     {
       "id": "rect_573291",
@@ -1229,13 +1288,14 @@
         "type": 3
       },
       "seed": 661482,
-      "version": 1,
-      "versionNonce": 215263,
+      "version": 2,
+      "versionNonce": 484344486,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "aa"
     },
     {
       "id": "text_552846",
@@ -1256,11 +1316,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 297720,
-      "version": 1,
-      "versionNonce": 354054,
+      "version": 2,
+      "versionNonce": 138207930,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Hero.jsx (Barre de Recherche Flottante)",
@@ -1271,7 +1331,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "Hero.jsx (Barre de Recherche Flottante)",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "ab",
+      "autoResize": true
     },
     {
       "id": "text_124169",
@@ -1279,7 +1341,7 @@
       "x": 68,
       "y": 502,
       "width": 504,
-      "height": 27.0,
+      "height": 27,
       "angle": 0,
       "strokeColor": "#1E293B",
       "backgroundColor": "transparent",
@@ -1292,11 +1354,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 171391,
-      "version": 1,
-      "versionNonce": 902138,
+      "version": 2,
+      "versionNonce": 1350778342,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Sélecteur géolocalisé (Casablanca, Rabat, Marrakech, Tanger)\nFiltrage instantané par catégorie et mot-clé textuel",
@@ -1307,14 +1369,16 @@
       "baseline": 8.5,
       "containerId": null,
       "originalText": "Sélecteur géolocalisé (Casablanca, Rabat, Marrakech, Tanger)\nFiltrage instantané par catégorie et mot-clé textuel",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "ac",
+      "autoResize": true
     },
     {
       "id": "rect_654792",
       "type": "rectangle",
       "x": 76,
       "y": 535,
-      "width": 122.0,
+      "width": 122,
       "height": 20,
       "angle": 0,
       "strokeColor": "#1971C2",
@@ -1330,13 +1394,14 @@
         "type": 3
       },
       "seed": 121884,
-      "version": 1,
-      "versionNonce": 886448,
+      "version": 2,
+      "versionNonce": 1522826106,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "ad"
     },
     {
       "id": "text_642404",
@@ -1357,11 +1422,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 748026,
-      "version": 1,
-      "versionNonce": 946804,
+      "version": 2,
+      "versionNonce": 2121175334,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "🇲🇦 Villes Maroc",
@@ -1372,14 +1437,16 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "🇲🇦 Villes Maroc",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "ae",
+      "autoResize": true
     },
     {
       "id": "rect_814066",
       "type": "rectangle",
-      "x": 208.0,
+      "x": 208,
       "y": 535,
-      "width": 158.0,
+      "width": 158,
       "height": 20,
       "angle": 0,
       "strokeColor": "#1971C2",
@@ -1395,18 +1462,19 @@
         "type": 3
       },
       "seed": 770968,
-      "version": 1,
-      "versionNonce": 392282,
+      "version": 2,
+      "versionNonce": 1381694522,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "af"
     },
     {
       "id": "text_344376",
       "type": "text",
-      "x": 214.0,
+      "x": 214,
       "y": 538,
       "width": 104.4,
       "height": 12.15,
@@ -1422,11 +1490,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 273301,
-      "version": 1,
-      "versionNonce": 138410,
+      "version": 2,
+      "versionNonce": 1376615526,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "🔍 Filtres BTP/Outils",
@@ -1437,7 +1505,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "🔍 Filtres BTP/Outils",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "ag",
+      "autoResize": true
     },
     {
       "id": "rect_642136",
@@ -1460,13 +1530,14 @@
         "type": 3
       },
       "seed": 56449,
-      "version": 1,
-      "versionNonce": 633918,
+      "version": 2,
+      "versionNonce": 1021535482,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "ah"
     },
     {
       "id": "text_709890",
@@ -1487,11 +1558,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 195736,
-      "version": 1,
-      "versionNonce": 461214,
+      "version": 2,
+      "versionNonce": 19726246,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "EquipmentModal.jsx (Calculateur & Booking)",
@@ -1502,7 +1573,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "EquipmentModal.jsx (Calculateur & Booking)",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "ai",
+      "autoResize": true
     },
     {
       "id": "text_659746",
@@ -1510,7 +1583,7 @@
       "x": 618,
       "y": 502,
       "width": 534,
-      "height": 27.0,
+      "height": 27,
       "angle": 0,
       "strokeColor": "#1E293B",
       "backgroundColor": "transparent",
@@ -1523,11 +1596,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 672265,
-      "version": 1,
-      "versionNonce": 589141,
+      "version": 2,
+      "versionNonce": 870364602,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Calculateur de réduction de durée (3j=-15%, 7j=-30%, 30j=-50%)\nExplication transparente du séquestre de caution CMI",
@@ -1538,7 +1611,9 @@
       "baseline": 8.5,
       "containerId": null,
       "originalText": "Calculateur de réduction de durée (3j=-15%, 7j=-30%, 30j=-50%)\nExplication transparente du séquestre de caution CMI",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aj",
+      "autoResize": true
     },
     {
       "id": "rect_681046",
@@ -1561,13 +1636,14 @@
         "type": 3
       },
       "seed": 266154,
-      "version": 1,
-      "versionNonce": 292717,
+      "version": 2,
+      "versionNonce": 2147097318,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "ak"
     },
     {
       "id": "text_281167",
@@ -1588,11 +1664,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 134907,
-      "version": 1,
-      "versionNonce": 47299,
+      "version": 2,
+      "versionNonce": 678817402,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "💳 Caution CMI Bloquée",
@@ -1603,7 +1679,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "💳 Caution CMI Bloquée",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "al",
+      "autoResize": true
     },
     {
       "id": "rect_323006",
@@ -1626,13 +1704,14 @@
         "type": 3
       },
       "seed": 436095,
-      "version": 1,
-      "versionNonce": 535368,
+      "version": 2,
+      "versionNonce": 889310758,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "am"
     },
     {
       "id": "text_158466",
@@ -1653,11 +1732,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 818492,
-      "version": 1,
-      "versionNonce": 754323,
+      "version": 2,
+      "versionNonce": 1868959546,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "📉 Remise Dégressive",
@@ -1668,7 +1747,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "📉 Remise Dégressive",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "an",
+      "autoResize": true
     },
     {
       "id": "rect_817674",
@@ -1691,13 +1772,14 @@
         "type": 3
       },
       "seed": 271454,
-      "version": 1,
-      "versionNonce": 30738,
+      "version": 2,
+      "versionNonce": 758192486,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "ao"
     },
     {
       "id": "text_442789",
@@ -1718,11 +1800,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 745998,
-      "version": 1,
-      "versionNonce": 758800,
+      "version": 2,
+      "versionNonce": 1293162490,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "KYCVerificationModal.jsx (Contrôle CIN CNDP)",
@@ -1733,7 +1815,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "KYCVerificationModal.jsx (Contrôle CIN CNDP)",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "ap",
+      "autoResize": true
     },
     {
       "id": "text_171431",
@@ -1741,7 +1825,7 @@
       "x": 1198,
       "y": 502,
       "width": 674,
-      "height": 27.0,
+      "height": 27,
       "angle": 0,
       "strokeColor": "#1E293B",
       "backgroundColor": "transparent",
@@ -1754,11 +1838,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 379271,
-      "version": 1,
-      "versionNonce": 565818,
+      "version": 2,
+      "versionNonce": 1339358374,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Simulation de test de vivacité caméra et saisie de CIN\nPurge immédiate des flux vidéo de la mémoire vive",
@@ -1769,7 +1853,9 @@
       "baseline": 8.5,
       "containerId": null,
       "originalText": "Simulation de test de vivacité caméra et saisie de CIN\nPurge immédiate des flux vidéo de la mémoire vive",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aq",
+      "autoResize": true
     },
     {
       "id": "rect_133223",
@@ -1792,13 +1878,14 @@
         "type": 3
       },
       "seed": 165034,
-      "version": 1,
-      "versionNonce": 805492,
+      "version": 2,
+      "versionNonce": 25364666,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "ar"
     },
     {
       "id": "text_894841",
@@ -1819,11 +1906,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 563418,
-      "version": 1,
-      "versionNonce": 256990,
+      "version": 2,
+      "versionNonce": 312113126,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "📸 Liveness Anti-Deepfake",
@@ -1834,14 +1921,16 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "📸 Liveness Anti-Deepfake",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "as",
+      "autoResize": true
     },
     {
       "id": "rect_287305",
       "type": "rectangle",
       "x": 1402.8,
       "y": 535,
-      "width": 158.0,
+      "width": 158,
       "height": 20,
       "angle": 0,
       "strokeColor": "#2B8A3E",
@@ -1857,13 +1946,14 @@
         "type": 3
       },
       "seed": 862534,
-      "version": 1,
-      "versionNonce": 152986,
+      "version": 2,
+      "versionNonce": 1414914426,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "at"
     },
     {
       "id": "text_987867",
@@ -1884,11 +1974,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 888442,
-      "version": 1,
-      "versionNonce": 137160,
+      "version": 2,
+      "versionNonce": 764316454,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "🔒 Zero-Knowledge RAM",
@@ -1899,7 +1989,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "🔒 Zero-Knowledge RAM",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "au",
+      "autoResize": true
     },
     {
       "id": "rect_996399",
@@ -1922,13 +2014,14 @@
         "type": 3
       },
       "seed": 70842,
-      "version": 1,
-      "versionNonce": 235622,
+      "version": 2,
+      "versionNonce": 550478394,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "av"
     },
     {
       "id": "text_932011",
@@ -1949,11 +2042,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 760599,
-      "version": 1,
-      "versionNonce": 886037,
+      "version": 2,
+      "versionNonce": 1327380070,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "💡 EXPLICATION MÉTIER & TECHNIQUE (POURQUOI & COMMENT) :",
@@ -1964,7 +2057,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "💡 EXPLICATION MÉTIER & TECHNIQUE (POURQUOI & COMMENT) :",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "aw",
+      "autoResize": true
     },
     {
       "id": "text_784381",
@@ -1985,11 +2080,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 664324,
-      "version": 1,
-      "versionNonce": 803583,
+      "version": 2,
+      "versionNonce": 1641237242,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "📌 POURQUOI (WHY) : La clarté sur la caution est le 1er facteur de conversion au Maroc.",
@@ -2000,7 +2095,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "📌 POURQUOI (WHY) : La clarté sur la caution est le 1er facteur de conversion au Maroc.",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "ax",
+      "autoResize": true
     },
     {
       "id": "text_516122",
@@ -2021,11 +2118,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 768643,
-      "version": 1,
-      "versionNonce": 123764,
+      "version": 2,
+      "versionNonce": 1343650214,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Le locataire doit comprendre que les 1500 MAD de caution ne sont pas prélevés de son",
@@ -2036,7 +2133,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "Le locataire doit comprendre que les 1500 MAD de caution ne sont pas prélevés de son",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "ay",
+      "autoResize": true
     },
     {
       "id": "text_152117",
@@ -2057,11 +2156,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 607451,
-      "version": 1,
-      "versionNonce": 305228,
+      "version": 2,
+      "versionNonce": 1038343098,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "compte, mais uniquement réservés sur son plafond.",
@@ -2072,7 +2171,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "compte, mais uniquement réservés sur son plafond.",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "az",
+      "autoResize": true
     },
     {
       "id": "text_607082",
@@ -2093,11 +2194,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 855201,
-      "version": 1,
-      "versionNonce": 739390,
+      "version": 2,
+      "versionNonce": 1738822886,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "⚙️ COMMENT (HOW) : `EquipmentModal` utilise un hook `useMemo` pour recalculer en temps",
@@ -2108,7 +2209,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "⚙️ COMMENT (HOW) : `EquipmentModal` utilise un hook `useMemo` pour recalculer en temps",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b00",
+      "autoResize": true
     },
     {
       "id": "text_472410",
@@ -2129,11 +2232,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 572798,
-      "version": 1,
-      "versionNonce": 366881,
+      "version": 2,
+      "versionNonce": 321148026,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "réel le sous-total et afficher le badge explicatif CMI avec confirmation en 1 clic.",
@@ -2144,7 +2247,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "réel le sous-total et afficher le badge explicatif CMI avec confirmation en 1 clic.",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b01",
+      "autoResize": true
     },
     {
       "id": "rect_753331",
@@ -2167,13 +2272,14 @@
         "type": 3
       },
       "seed": 273479,
-      "version": 1,
-      "versionNonce": 804619,
+      "version": 2,
+      "versionNonce": 1599391782,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b02"
     },
     {
       "id": "text_974772",
@@ -2194,11 +2300,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 797630,
-      "version": 1,
-      "versionNonce": 868846,
+      "version": 2,
+      "versionNonce": 56079674,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "3. Espace Professionnel Loueur & Suivi de Flotte (OwnerDashboard.jsx)",
@@ -2209,7 +2315,9 @@
       "baseline": 11.9,
       "containerId": null,
       "originalText": "3. Espace Professionnel Loueur & Suivi de Flotte (OwnerDashboard.jsx)",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b03",
+      "autoResize": true
     },
     {
       "id": "rect_532890",
@@ -2232,13 +2340,14 @@
         "type": 3
       },
       "seed": 980744,
-      "version": 1,
-      "versionNonce": 486762,
+      "version": 2,
+      "versionNonce": 1192547174,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b04"
     },
     {
       "id": "text_496273",
@@ -2259,11 +2368,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 120647,
-      "version": 1,
-      "versionNonce": 872456,
+      "version": 2,
+      "versionNonce": 2145451514,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Gestion de Flotte BTP & Matériel",
@@ -2274,7 +2383,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "Gestion de Flotte BTP & Matériel",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b05",
+      "autoResize": true
     },
     {
       "id": "text_230324",
@@ -2282,7 +2393,7 @@
       "x": 68,
       "y": 802,
       "width": 504,
-      "height": 27.0,
+      "height": 27,
       "angle": 0,
       "strokeColor": "#1E293B",
       "backgroundColor": "transparent",
@@ -2295,11 +2406,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 829638,
-      "version": 1,
-      "versionNonce": 182496,
+      "version": 2,
+      "versionNonce": 691107494,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Vue d'ensemble des équipements en location et disponibles\nIndicateurs de chiffre d'affaires mensuel en Dirhams",
@@ -2310,7 +2421,9 @@
       "baseline": 8.5,
       "containerId": null,
       "originalText": "Vue d'ensemble des équipements en location et disponibles\nIndicateurs de chiffre d'affaires mensuel en Dirhams",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b06",
+      "autoResize": true
     },
     {
       "id": "rect_650024",
@@ -2333,13 +2446,14 @@
         "type": 3
       },
       "seed": 624583,
-      "version": 1,
-      "versionNonce": 786996,
+      "version": 2,
+      "versionNonce": 1438854842,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b07"
     },
     {
       "id": "text_326202",
@@ -2360,11 +2474,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 452848,
-      "version": 1,
-      "versionNonce": 99408,
+      "version": 2,
+      "versionNonce": 1045934566,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "🏢 ICE Entreprise Maroc",
@@ -2375,7 +2489,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "🏢 ICE Entreprise Maroc",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b08",
+      "autoResize": true
     },
     {
       "id": "rect_660316",
@@ -2398,13 +2514,14 @@
         "type": 3
       },
       "seed": 32582,
-      "version": 1,
-      "versionNonce": 990295,
+      "version": 2,
+      "versionNonce": 966870906,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b09"
     },
     {
       "id": "text_242159",
@@ -2425,11 +2542,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 332168,
-      "version": 1,
-      "versionNonce": 170192,
+      "version": 2,
+      "versionNonce": 563381542,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "📊 KPI Revenus MAD",
@@ -2440,7 +2557,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "📊 KPI Revenus MAD",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0A",
+      "autoResize": true
     },
     {
       "id": "rect_664295",
@@ -2463,13 +2582,14 @@
         "type": 3
       },
       "seed": 600186,
-      "version": 1,
-      "versionNonce": 389436,
+      "version": 2,
+      "versionNonce": 1404979258,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b0B"
     },
     {
       "id": "text_329135",
@@ -2490,11 +2610,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 144840,
-      "version": 1,
-      "versionNonce": 519068,
+      "version": 2,
+      "versionNonce": 72675430,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Tableau de Suivi des Cautions CMI",
@@ -2505,7 +2625,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "Tableau de Suivi des Cautions CMI",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0C",
+      "autoResize": true
     },
     {
       "id": "text_613441",
@@ -2513,7 +2635,7 @@
       "x": 618,
       "y": 802,
       "width": 534,
-      "height": 27.0,
+      "height": 27,
       "angle": 0,
       "strokeColor": "#1E293B",
       "backgroundColor": "transparent",
@@ -2526,11 +2648,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 346522,
-      "version": 1,
-      "versionNonce": 392307,
+      "version": 2,
+      "versionNonce": 1274884346,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Suivi des empreintes bancaires actives (42 000 MAD sous séquestre)\nStatut des relances automatisées n8n et états des lieux",
@@ -2541,7 +2663,9 @@
       "baseline": 8.5,
       "containerId": null,
       "originalText": "Suivi des empreintes bancaires actives (42 000 MAD sous séquestre)\nStatut des relances automatisées n8n et états des lieux",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0D",
+      "autoResize": true
     },
     {
       "id": "rect_579422",
@@ -2564,13 +2688,14 @@
         "type": 3
       },
       "seed": 692727,
-      "version": 1,
-      "versionNonce": 161287,
+      "version": 2,
+      "versionNonce": 1650848678,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b0E"
     },
     {
       "id": "text_526973",
@@ -2591,11 +2716,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 713734,
-      "version": 1,
-      "versionNonce": 740395,
+      "version": 2,
+      "versionNonce": 1440809402,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "🔒 Cautions Séquestrées",
@@ -2606,7 +2731,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "🔒 Cautions Séquestrées",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0F",
+      "autoResize": true
     },
     {
       "id": "rect_680083",
@@ -2629,13 +2756,14 @@
         "type": 3
       },
       "seed": 541191,
-      "version": 1,
-      "versionNonce": 187218,
+      "version": 2,
+      "versionNonce": 905219814,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b0G"
     },
     {
       "id": "text_946322",
@@ -2656,11 +2784,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 130819,
-      "version": 1,
-      "versionNonce": 582140,
+      "version": 2,
+      "versionNonce": 1015855738,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "⏰ Relances J-1/H-2",
@@ -2671,7 +2799,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "⏰ Relances J-1/H-2",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0H",
+      "autoResize": true
     },
     {
       "id": "rect_129606",
@@ -2694,13 +2824,14 @@
         "type": 3
       },
       "seed": 119588,
-      "version": 1,
-      "versionNonce": 400522,
+      "version": 2,
+      "versionNonce": 730710566,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b0I"
     },
     {
       "id": "text_833395",
@@ -2721,11 +2852,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 261753,
-      "version": 1,
-      "versionNonce": 63025,
+      "version": 2,
+      "versionNonce": 1858296634,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Contrats DOC & Rapports Financiers",
@@ -2736,7 +2867,9 @@
       "baseline": 10.2,
       "containerId": null,
       "originalText": "Contrats DOC & Rapports Financiers",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0J",
+      "autoResize": true
     },
     {
       "id": "text_608728",
@@ -2744,7 +2877,7 @@
       "x": 1198,
       "y": 802,
       "width": 674,
-      "height": 27.0,
+      "height": 27,
       "angle": 0,
       "strokeColor": "#1E293B",
       "backgroundColor": "transparent",
@@ -2757,11 +2890,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 326880,
-      "version": 1,
-      "versionNonce": 13564,
+      "version": 2,
+      "versionNonce": 1444842854,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "Accès direct aux baux PDF scellés en SHA-256 avec horodatage RFC 3161\nFacturation avec mention obligatoire de l'ICE de l'entreprise",
@@ -2772,7 +2905,9 @@
       "baseline": 8.5,
       "containerId": null,
       "originalText": "Accès direct aux baux PDF scellés en SHA-256 avec horodatage RFC 3161\nFacturation avec mention obligatoire de l'ICE de l'entreprise",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0K",
+      "autoResize": true
     },
     {
       "id": "rect_356417",
@@ -2795,13 +2930,14 @@
         "type": 3
       },
       "seed": 629053,
-      "version": 1,
-      "versionNonce": 823786,
+      "version": 2,
+      "versionNonce": 182969338,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b0L"
     },
     {
       "id": "text_397655",
@@ -2822,11 +2958,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 398399,
-      "version": 1,
-      "versionNonce": 787344,
+      "version": 2,
+      "versionNonce": 1660154022,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "⚖️ Baux Horodatés",
@@ -2837,7 +2973,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "⚖️ Baux Horodatés",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0M",
+      "autoResize": true
     },
     {
       "id": "rect_638909",
@@ -2860,13 +2998,14 @@
         "type": 3
       },
       "seed": 893520,
-      "version": 1,
-      "versionNonce": 244354,
+      "version": 2,
+      "versionNonce": 1794987194,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b0N"
     },
     {
       "id": "text_448451",
@@ -2887,11 +3026,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 30781,
-      "version": 1,
-      "versionNonce": 265247,
+      "version": 2,
+      "versionNonce": 1304095718,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "📑 Export Factures",
@@ -2902,7 +3041,9 @@
       "baseline": 7.65,
       "containerId": null,
       "originalText": "📑 Export Factures",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0O",
+      "autoResize": true
     },
     {
       "id": "rect_975853",
@@ -2925,13 +3066,14 @@
         "type": 3
       },
       "seed": 250786,
-      "version": 1,
-      "versionNonce": 746423,
+      "version": 2,
+      "versionNonce": 816229754,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "b0P"
     },
     {
       "id": "text_804726",
@@ -2952,11 +3094,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 230908,
-      "version": 1,
-      "versionNonce": 956091,
+      "version": 2,
+      "versionNonce": 343965478,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "💡 EXPLICATION MÉTIER & TECHNIQUE (POURQUOI & COMMENT) :",
@@ -2967,7 +3109,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "💡 EXPLICATION MÉTIER & TECHNIQUE (POURQUOI & COMMENT) :",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0Q",
+      "autoResize": true
     },
     {
       "id": "text_841503",
@@ -2988,11 +3132,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 996613,
-      "version": 1,
-      "versionNonce": 307005,
+      "version": 2,
+      "versionNonce": 1361505850,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "📌 POURQUOI (WHY) : Offrir aux entreprises de BTP et loueurs professionnels une",
@@ -3003,7 +3147,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "📌 POURQUOI (WHY) : Offrir aux entreprises de BTP et loueurs professionnels une",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0R",
+      "autoResize": true
     },
     {
       "id": "text_814762",
@@ -3024,11 +3170,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 627768,
-      "version": 1,
-      "versionNonce": 223333,
+      "version": 2,
+      "versionNonce": 1806805606,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "visibilité totale sur leurs garanties financières et leurs encaissements en dirhams sans",
@@ -3039,7 +3185,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "visibilité totale sur leurs garanties financières et leurs encaissements en dirhams sans",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0S",
+      "autoResize": true
     },
     {
       "id": "text_446685",
@@ -3060,11 +3208,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 511552,
-      "version": 1,
-      "versionNonce": 645821,
+      "version": 2,
+      "versionNonce": 560011002,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "complexité administrative.",
@@ -3075,7 +3223,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "complexité administrative.",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0T",
+      "autoResize": true
     },
     {
       "id": "text_488893",
@@ -3096,11 +3246,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 684767,
-      "version": 1,
-      "versionNonce": 633578,
+      "version": 2,
+      "versionNonce": 1914400166,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "⚙️ COMMENT (HOW) : Le tableau de bord affiche les contrats actifs et permet de",
@@ -3111,7 +3261,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "⚙️ COMMENT (HOW) : Le tableau de bord affiche les contrats actifs et permet de",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0U",
+      "autoResize": true
     },
     {
       "id": "text_432130",
@@ -3132,11 +3284,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 485483,
-      "version": 1,
-      "versionNonce": 258268,
+      "version": 2,
+      "versionNonce": 1641555898,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "déclencher l'ordre de libération de caution CMI dès la restitution du matériel sans",
@@ -3147,7 +3299,9 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "déclencher l'ordre de libération de caution CMI dès la restitution du matériel sans",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0V",
+      "autoResize": true
     },
     {
       "id": "text_337406",
@@ -3168,11 +3322,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 701506,
-      "version": 1,
-      "versionNonce": 389312,
+      "version": 2,
+      "versionNonce": 1693108454,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1787779969742,
+      "boundElements": [],
+      "updated": 1788397141140,
       "link": null,
       "locked": false,
       "text": "dommage.",
@@ -3183,12 +3337,16 @@
       "baseline": 9.35,
       "containerId": null,
       "originalText": "dommage.",
-      "lineHeight": 1.25
+      "lineHeight": 1.25,
+      "index": "b0W",
+      "autoResize": true
     }
   ],
   "appState": {
-    "viewBackgroundColor": "#FFFFFF",
-    "gridSize": null
+    "gridSize": 20,
+    "gridStep": 5,
+    "gridModeEnabled": false,
+    "viewBackgroundColor": "#FFFFFF"
   },
   "files": {}
 }

@@ -8,31 +8,29 @@ class EquipmentCreateRequest(BaseModel):
     description: str
     categorie: str
     prix_par_jour: float = Field(..., gt=0)
-    prix_par_semaine: Optional[float] = None
-    prix_par_mois: Optional[float] = None
     montant_caution: float = Field(..., ge=0)
-    mode_caution: Optional[str] = "cash" # cash, cmi_empreinte, non_requis
-    photos: Optional[List[str]] = []
-    specs: Optional[Dict[str, Any]] = {}
-    lat: float
-    lng: float
+    photos: List[str] = Field(default_factory=list, max_length=8)
+    specs: Dict[str, Any] = Field(default_factory=dict)
+    lat: Optional[float] = None
+    lng: Optional[float] = None
     city: Optional[str] = "Casablanca"
     adresse_approximative: Optional[str] = None
+    is_available: bool = True
+    calendrier_disponibilite: Dict[str, Any] = Field(default_factory=dict)
 
 class EquipmentUpdateRequest(BaseModel):
     titre: Optional[str] = None
     description: Optional[str] = None
     categorie: Optional[str] = None
     prix_par_jour: Optional[float] = None
-    prix_par_semaine: Optional[float] = None
-    prix_par_mois: Optional[float] = None
     montant_caution: Optional[float] = None
-    mode_caution: Optional[str] = None
     photos: Optional[List[str]] = None
     specs: Optional[Dict[str, Any]] = None
     statut: Optional[str] = None # actif, indisponible, archive
     city: Optional[str] = None
     adresse_approximative: Optional[str] = None
+    is_available: Optional[bool] = None
+    calendrier_disponibilite: Optional[Dict[str, Any]] = None
 
 class EquipmentResponse(BaseModel):
     id: uuid.UUID
@@ -55,7 +53,7 @@ class EquipmentResponse(BaseModel):
     distance_km: Optional[float] = None
     loueur_nom: Optional[str] = None
     loueur_note: Optional[float] = 5.0
-    loueur_statut_kyc: Optional[str] = "approuve"
+    loueur_statut_kyc: Optional[str] = "not_started"
     cree_le: datetime
 
     class Config:

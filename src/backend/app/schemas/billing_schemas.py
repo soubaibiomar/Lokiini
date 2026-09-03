@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, Field
 
 class SubscriptionPlanResponse(BaseModel):
     nom: str
@@ -22,7 +22,9 @@ class MySubscriptionResponse(BaseModel):
     renouvellement_le: Optional[datetime] = None
 
 class SubscriptionUpgradeRequest(BaseModel):
-    nouveau_plan: str # Gratuit, Premium, Pro, Entreprise
+    nouveau_plan: str = Field(
+        validation_alias=AliasChoices("nouveau_plan", "plan_id")
+    )  # Gratuit, Premium, Pro, Entreprise; plan_id is the legacy input name.
 
 class EarningsDashboardResponse(BaseModel):
     periode: str # jour, semaine, mois, annee
@@ -33,6 +35,8 @@ class EarningsDashboardResponse(BaseModel):
     nombre_locations_terminees: int
     taux_occupation_pct: float
     top_articles_rentables: List[Dict[str, Any]]
+    payout_pending_mad: float = 0
+    payout_status: str = "not_ready"
 
 class InvoiceResponse(BaseModel):
     numero_facture: str

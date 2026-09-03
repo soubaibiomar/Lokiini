@@ -14,7 +14,9 @@ from app.schemas.booking_schemas import (
 )
 from app.services.pricing_service import pricing_service
 from app.services.booking_state_machine import booking_state_machine
+from app.services.notification_service import NotificationEvent, notify
 from app.routers.auth import get_current_user
+from app.core.authorization import require_resource_access
 
 router = APIRouter(tags=["Réservations, Tarification Dégressive & Machine à États"])
 
@@ -68,7 +70,7 @@ async def create_booking(
         )
 
     # 2. Vérification KYC si requis pour cet article
-    if article.kyc_requis and current_user.statut_verification != "approuve":
+    if article.kyc_requis and current_user.statut_verification != "verified":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
@@ -80,7 +82,7 @@ async def create_booking(
     # 3. Contrôle anti-chevauchement calendaire
     conflict_query = select(Reservation).where(
         Reservation.article_id == payload.article_id,
-        Reservation.statut_reservation.in_(["confirme_cod", "en_cours"]),
+        Reservation.statut.in_(booking_state_machine.BLOCKING_STATUSES),
         or_(
             and_(Reservation.date_debut <= payload.date_fin, Reservation.date_fin >= payload.date_debut)
         )
@@ -89,7 +91,7 @@ async def create_booking(
     if conflict_res.scalars().first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "DATES_UNAVAILABLE", "message": "Ce matériel est déjà réservé sur les dates sélectionnées."}
+            detail={"code": "BOOKING_DATE_UNAVAILABLE", "message": "Ce matériel est déjà réservé sur les dates sélectionnées."}
         )
 
     # 4. Calcul de la tarification
@@ -116,17 +118,22 @@ async def create_booking(
         loueur_id=article.loueur_id,
         date_debut=payload.date_debut,
         date_fin=payload.date_fin,
-        nombre_jours=pricing["nombre_jours"],
+        total_days=pricing["nombre_jours"],
         prix_total=pricing["total_location_mad"],
         montant_caution=pricing["montant_caution_mad"],
-        frais_service=pricing["frais_service_plateforme_mad"],
-        statut_reservation="en_attente_approbation",
-        mode_paiement=payload.mode_paiement or "cash_on_delivery",
-        mode_caution=payload.mode_caution or "cash",
-        notes_conditions=payload.message_loueur,
+        statut="en_attente_approbation",
+        payment_method=payload.mode_paiement or "cash_on_delivery",
         cree_le=datetime.utcnow()
     )
     db.add(reservation)
+    notify(
+        db,
+        recipient_id=article.loueur_id,
+        event_type=NotificationEvent.RESERVATION_REQUESTED,
+        title="Nouvelle demande de réservation",
+        body=f"Une demande a été reçue pour {article.titre}.",
+        booking_id=reservation.id,
+    )
     await db.commit()
     await db.refresh(reservation)
 
@@ -134,7 +141,7 @@ async def create_booking(
         "statut": "succes",
         "message": "Demande de réservation envoyée au loueur.",
         "reservation_id": str(reservation.id),
-        "statut_reservation": reservation.statut_reservation,
+        "statut_reservation": reservation.statut,
         "total_location_mad": float(reservation.prix_total),
         "montant_caution_mad": float(reservation.montant_caution)
     }
@@ -159,7 +166,7 @@ async def list_user_bookings(
         query = query.where(or_(Reservation.locataire_id == current_user.id, Reservation.loueur_id == current_user.id))
 
     if statut:
-        query = query.where(Reservation.statut_reservation == statut)
+        query = query.where(Reservation.statut == statut)
 
     query = query.order_by(Reservation.cree_le.desc())
     result = await db.execute(query)
@@ -179,13 +186,13 @@ async def list_user_bookings(
             "article_photos": art.photos if art else [],
             "date_debut": r.date_debut.isoformat(),
             "date_fin": r.date_fin.isoformat(),
-            "nombre_jours": r.nombre_jours,
+            "nombre_jours": r.total_days,
             "prix_total": float(r.prix_total),
             "montant_caution": float(r.montant_caution),
-            "frais_service": float(r.frais_service),
-            "statut_reservation": r.statut_reservation,
-            "mode_paiement": r.mode_paiement,
-            "mode_caution": r.mode_caution,
+            "frais_service": float(r.platform_commission_mad),
+            "statut_reservation": r.statut,
+            "mode_paiement": r.payment_method,
+            "mode_caution": "cash",
             "cree_le": r.cree_le.isoformat()
         })
 
@@ -205,8 +212,7 @@ async def get_booking_detail(
     if not booking:
         raise HTTPException(status_code=404, detail="Réservation introuvable.")
 
-    if current_user.id not in [booking.locataire_id, booking.loueur_id] and current_user.user_role != "admin":
-        raise HTTPException(status_code=403, detail="Accès non autorisé à cette réservation.")
+    require_resource_access(current_user, booking.locataire_id, booking.loueur_id)
 
     art_res = await db.execute(select(Article).where(Article.id == booking.article_id))
     art = art_res.scalars().first()
@@ -231,7 +237,7 @@ async def get_booking_detail(
         "locataire": {
             "id": str(loc.id) if loc else None,
             "nom": loc.nom_complet if loc else "Locataire",
-            "statut_kyc": loc.statut_verification if loc else "en_attente"
+            "statut_kyc": loc.statut_verification if loc else "not_started"
         },
         "loueur": {
             "id": str(loueur.id) if loueur else None,
@@ -240,14 +246,14 @@ async def get_booking_detail(
         },
         "date_debut": booking.date_debut.isoformat(),
         "date_fin": booking.date_fin.isoformat(),
-        "nombre_jours": booking.nombre_jours,
+        "nombre_jours": booking.total_days,
         "prix_total": float(booking.prix_total),
         "montant_caution": float(booking.montant_caution),
-        "frais_service": float(booking.frais_service),
-        "statut_reservation": booking.statut_reservation,
-        "mode_paiement": booking.mode_paiement,
-        "mode_caution": booking.mode_caution,
-        "bail_signe_le": booking.bail_signe_le.isoformat() if booking.bail_signe_le else None,
+        "frais_service": float(booking.platform_commission_mad),
+        "statut_reservation": booking.statut,
+        "mode_paiement": booking.payment_method,
+        "mode_caution": "cash",
+        "bail_signe_le": booking.contrat_signe_le.isoformat() if booking.contrat_signe_le else None,
         "cree_le": booking.cree_le.isoformat()
     }
 
@@ -266,19 +272,37 @@ async def update_booking_status(
     if not booking:
         raise HTTPException(status_code=404, detail="Réservation introuvable.")
 
-    if current_user.id not in [booking.locataire_id, booking.loueur_id] and current_user.user_role != "admin":
-        raise HTTPException(status_code=403, detail="Non autorisé.")
+    require_resource_access(current_user, booking.locataire_id, booking.loueur_id)
 
-    # Validation par la machine à états
-    booking_state_machine.validate_transition(booking.statut_reservation, payload.nouveau_statut)
-
-    booking.statut_reservation = payload.nouveau_statut
-    booking.modifie_le = datetime.utcnow()
+    action = payload.action
+    if payload.nouveau_statut:
+        action = booking_state_machine.action_for_legacy_target(payload.nouveau_statut)
+    actor = booking_state_machine.actor_for_user(current_user, booking)
+    target = booking_state_machine.transition(booking, action, actor)
+    if target.value == "acceptee":
+        notify(
+            db,
+            recipient_id=booking.locataire_id,
+            event_type=NotificationEvent.RESERVATION_ACCEPTED,
+            title="Demande acceptée",
+            body="Le propriétaire a accepté votre demande de réservation.",
+            booking_id=booking.id,
+        )
+    elif target.value == "rejete":
+        notify(
+            db,
+            recipient_id=booking.locataire_id,
+            event_type=NotificationEvent.RESERVATION_REJECTED,
+            title="Demande refusée",
+            body="Le propriétaire n’a pas accepté cette demande de réservation.",
+            booking_id=booking.id,
+        )
     await db.commit()
 
     return {
         "statut": "succes",
-        "message": f"Statut mis à jour vers '{payload.nouveau_statut}'.",
+        "message": f"Action '{action}' appliquée.",
         "reservation_id": str(booking.id),
-        "nouveau_statut": booking.statut_reservation
+        "nouveau_statut": target.value,
+        "action": action.value if hasattr(action, "value") else action,
     }

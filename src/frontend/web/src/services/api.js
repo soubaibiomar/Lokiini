@@ -1,470 +1,367 @@
-// Flexible base URL resolution for Docker Gateway, Vite dev server, and local FastAPI
-const getApiBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    if (window.location.port === '' || window.location.port === '80') {
-      return `${window.location.origin}/api/v1`;
-    }
-  }
-  return 'http://localhost:8001/api/v1';
-};
+import { API_BASE_URL, ApiError, apiClient, isApiError } from './httpClient.js';
 
-export const API_BASE_URL = getApiBaseUrl();
 
-// Auth token helper
+export { API_BASE_URL, ApiError, isApiError };
+
+const id = (value) => encodeURIComponent(String(value));
+
+// Retained for incremental caller compatibility. Header ownership is now in httpClient.
 export function getAuthHeaders() {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('lokiini_token') : null;
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
+  return { 'Content-Type': 'application/json' };
 }
 
-// ==============================================================================
-// 1. AUTHENTIFICATION & UTILISATEURS (PHASE 1)
-// ==============================================================================
 
-export async function registerUser(userData) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/inscription`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData)
-    });
-    const data = await response.json();
-    if (response.ok && data.access_token) {
-      localStorage.setItem('lokiini_token', data.access_token);
-      localStorage.setItem('lokiini_refresh_token', data.refresh_token);
-      localStorage.setItem('lokiini_user', JSON.stringify(data));
+// Identity and sessions
+export const createWebSession = (idToken, options) =>
+  apiClient.post('/auth/session', { id_token: idToken }, options);
+
+export const deleteWebSession = (options) =>
+  apiClient.delete('/auth/session', options);
+
+export const getCurrentUser = (options) =>
+  apiClient.get('/auth/me', options);
+
+export const updateCurrentUser = (profile, options) =>
+  apiClient.patch('/auth/me', profile, options);
+
+export const getPublicUserProfile = (userId, options) =>
+  apiClient.get(`/utilisateurs/${id(userId)}/profil`, options);
+
+export const getUserReviews = (userId, options) =>
+  apiClient.get(`/utilisateurs/${id(userId)}/avis`, options);
+
+
+// KYC
+export const initiateDiditKYC = (options) =>
+  apiClient.post('/auth/kyc/initier', {}, options);
+
+export const getDiditKYCStatus = (userId, options) =>
+  apiClient.get(`/auth/kyc/statut/${id(userId)}`, options);
+
+
+// Equipment catalogue
+export async function getEquipmentPage(filters = {}, options) {
+  const useGeo = Number.isFinite(filters.lat) && Number.isFinite(filters.lng);
+  const data = await apiClient.get(useGeo ? '/articles/recherche/geo' : '/articles', {
+    ...options,
+    query: {
+      lat: useGeo ? filters.lat : undefined,
+      lng: useGeo ? filters.lng : undefined,
+      radius_km: useGeo ? filters.radius_km : undefined,
+      city: filters.city && filters.city !== 'Toutes les villes' ? filters.city : undefined,
+      categorie: filters.category && filters.category !== 'all' ? filters.category : undefined,
+      q: filters.search || undefined,
+      prix_min: filters.prix_min ?? undefined,
+      prix_max: filters.prix_max ?? undefined,
+      disponible: filters.available ?? true,
+      verifie: filters.verified ?? false,
+      limit: filters.limit,
+      offset: filters.offset,
+    },
+  });
+  const items = data?.donnees ?? data ?? [];
+  return { items, total: Number.isFinite(Number(data?.total)) ? Number(data.total) : null };
+}
+
+export async function getEquipmentList(filters = {}, options) {
+  const page = await getEquipmentPage(filters, options);
+  return page.items;
+}
+
+export const getEquipmentCategories = (options) =>
+  apiClient.get('/articles/categories', options);
+
+export const getEquipment = (equipmentId, options) =>
+  apiClient.get(`/articles/${id(equipmentId)}`, options);
+
+export const createEquipment = (equipmentData, options) =>
+  apiClient.post('/articles', {
+    titre: equipmentData.titre ?? equipmentData.title,
+    description: equipmentData.description,
+    categorie: equipmentData.categorie ?? equipmentData.category,
+    prix_par_jour: equipmentData.prix_par_jour ?? equipmentData.daily_price_mad,
+    montant_caution: equipmentData.montant_caution ?? equipmentData.deposit_amount_mad,
+    photos: equipmentData.photos ?? equipmentData.images_urls ?? [],
+    specs: equipmentData.specs ?? equipmentData.specs_json ?? {},
+    city: equipmentData.city,
+    adresse_approximative: equipmentData.adresse_approximative ?? equipmentData.address,
+    lat: equipmentData.lat,
+    lng: equipmentData.lng,
+    is_available: equipmentData.is_available ?? true,
+    calendrier_disponibilite: equipmentData.calendrier_disponibilite ?? {},
+  }, options);
+
+export function uploadEquipmentPhoto(file, { onProgress, signal } = {}) {
+  return new Promise((resolve, reject) => {
+    const requestId = globalThis.crypto?.randomUUID?.() || `equipment-photo-${Date.now()}`;
+    const xhr = new XMLHttpRequest();
+    const form = new FormData();
+    form.append('photo', file, file.name || 'equipment-photo.webp');
+    xhr.open('POST', `${API_BASE_URL}/articles/photos`);
+    xhr.timeout = 30_000;
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('X-Request-ID', requestId);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+    xhr.onload = () => {
+      let payload = null;
+      try { payload = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { payload = null; }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(payload);
+        return;
+      }
+      const raw = payload?.erreur ?? payload?.detail ?? payload;
+      reject(new ApiError({
+        status: xhr.status,
+        code: raw?.code || `HTTP_${xhr.status}`,
+        message: raw?.message || (typeof raw === 'string' ? raw : 'La photo n’a pas pu être importée.'),
+        requestId: xhr.getResponseHeader('X-Request-ID') || requestId,
+        method: 'POST',
+        url: `${API_BASE_URL}/articles/photos`,
+      }));
+    };
+    xhr.onerror = () => reject(new ApiError({
+      code: 'NETWORK_ERROR', message: 'Impossible de joindre le service d’images.',
+      requestId, method: 'POST', url: `${API_BASE_URL}/articles/photos`,
+    }));
+    xhr.ontimeout = () => reject(new ApiError({
+      code: 'REQUEST_TIMEOUT', message: 'L’importation de la photo a dépassé le délai autorisé.',
+      requestId, method: 'POST', url: `${API_BASE_URL}/articles/photos`,
+    }));
+    xhr.onabort = () => reject(new ApiError({
+      code: 'REQUEST_CANCELLED', message: 'Importation annulée.',
+      requestId, method: 'POST', url: `${API_BASE_URL}/articles/photos`,
+    }));
+    if (signal?.aborted) {
+      reject(new ApiError({
+        code: 'REQUEST_CANCELLED', message: 'Importation annulée.',
+        requestId, method: 'POST', url: `${API_BASE_URL}/articles/photos`,
+      }));
+      return;
     }
-    return { ok: response.ok, data };
-  } catch (error) {
-    console.error('Error registering:', error);
-    return { ok: false, error: error.message };
-  }
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true });
+    xhr.send(form);
+  });
 }
 
-export async function loginUser(emailOrPhone, password) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/connexion`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email_ou_telephone: emailOrPhone, mot_de_passe: password })
-    });
-    const data = await response.json();
-    if (response.ok && data.access_token) {
-      localStorage.setItem('lokiini_token', data.access_token);
-      localStorage.setItem('lokiini_refresh_token', data.refresh_token);
-      localStorage.setItem('lokiini_user', JSON.stringify(data));
-    }
-    return { ok: response.ok, data };
-  } catch (error) {
-    console.error('Error logging in:', error);
-    return { ok: false, error: error.message };
-  }
+export const deleteEquipmentPhoto = (filename, options) =>
+  apiClient.delete(`/articles/photos/${id(filename)}`, options);
+
+export const getMyEquipment = (options) =>
+  apiClient.get('/articles/my-listings', options);
+
+export async function deleteEquipment(equipmentId, options) {
+  await apiClient.delete(`/articles/${id(equipmentId)}`, options);
+  return true;
 }
 
-export async function getCurrentUser() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, { headers: getAuthHeaders() });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
+
+// Reservations
+export const calculatePricing = (articleId, startDate, endDate, options) =>
+  apiClient.post('/reservations/calculer-prix', {
+    article_id: articleId,
+    date_debut: startDate,
+    date_fin: endDate,
+  }, options);
+
+export const createBooking = (articleId, startDate, endDate, messageLoueur = '', options) =>
+  apiClient.post('/reservations/creer', {
+    article_id: articleId,
+    date_debut: startDate,
+    date_fin: endDate,
+    mode_paiement: 'cash_on_delivery',
+    mode_caution: 'cash',
+    message_loueur: messageLoueur,
+  }, options);
+
+export async function getBookings(role = 'locataire', statut = null, options) {
+  const data = await apiClient.get('/reservations', {
+    ...options,
+    query: { role, statut },
+  });
+  return data?.donnees ?? data;
 }
 
-export async function getPublicUserProfile(userId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/utilisateurs/${userId}/profil`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
+export const performBookingAction = (bookingId, action, options) =>
+  apiClient.patch(`/reservations/${id(bookingId)}/statut`, { action }, options);
+
+export const getFinancialSummaries = (options) =>
+  apiClient.get('/payments', options);
+
+export const getBookingFinancialSummary = (bookingId, options) =>
+  apiClient.get(`/payments/bookings/${id(bookingId)}`, options);
+
+export const initiateBookingPayment = (bookingId, idempotencyKey, options = {}) =>
+  apiClient.post(`/payments/bookings/${id(bookingId)}/initiate`, {}, {
+    ...options,
+    headers: { ...options.headers, 'Idempotency-Key': idempotencyKey },
+  });
+
+
+// Check-in and check-out inspections
+export const getInspectionRequirements = (bookingId, inspectionType, options) =>
+  apiClient.get(`/inspections/bookings/${id(bookingId)}/requirements`, {
+    ...options, query: { inspection_type: inspectionType },
+  });
+
+export function uploadInspectionEvidence(bookingId, inspectionType, file, { onProgress, signal } = {}) {
+  return new Promise((resolve, reject) => {
+    const requestId = globalThis.crypto?.randomUUID?.() || `inspection-evidence-${Date.now()}`;
+    const xhr = new XMLHttpRequest();
+    const form = new FormData();
+    form.append('booking_id', String(bookingId));
+    form.append('inspection_type', inspectionType);
+    form.append('evidence_file', file, file.name || 'inspection-evidence');
+    xhr.open('POST', `${API_BASE_URL}/inspections/evidence`);
+    xhr.timeout = file.type.startsWith('video/') ? 120_000 : 30_000;
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('X-Request-ID', requestId);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+    xhr.onload = () => {
+      let payload = null;
+      try { payload = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { payload = null; }
+      if (xhr.status >= 200 && xhr.status < 300) return resolve(payload);
+      const raw = payload?.erreur ?? payload?.detail ?? payload;
+      return reject(new ApiError({
+        status: xhr.status, code: raw?.code || `HTTP_${xhr.status}`,
+        message: raw?.message || 'La preuve n’a pas pu être importée.',
+        requestId: xhr.getResponseHeader('X-Request-ID') || requestId,
+        method: 'POST', url: `${API_BASE_URL}/inspections/evidence`,
+      }));
+    };
+    xhr.onerror = () => reject(new ApiError({ code: 'NETWORK_ERROR', message: 'Impossible de joindre le stockage des preuves.', requestId, method: 'POST', url: `${API_BASE_URL}/inspections/evidence` }));
+    xhr.ontimeout = () => reject(new ApiError({ code: 'REQUEST_TIMEOUT', message: 'L’importation a dépassé le délai autorisé.', requestId, method: 'POST', url: `${API_BASE_URL}/inspections/evidence` }));
+    xhr.onabort = () => reject(new ApiError({ code: 'REQUEST_CANCELLED', message: 'Importation annulée.', requestId, method: 'POST', url: `${API_BASE_URL}/inspections/evidence` }));
+    if (signal?.aborted) return xhr.onabort();
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true });
+    xhr.send(form);
+  });
 }
 
-// ==============================================================================
-// 2. KYC DIDIT BIOMÉTRIQUE & CNDP (PHASE 2)
-// ==============================================================================
+export const deleteInspectionEvidence = (evidenceId, options) =>
+  apiClient.delete(`/inspections/evidence/${id(evidenceId)}`, options);
 
-export async function initiateDiditKYC(userId = null) {
-  try {
-    const payload = userId ? { user_id: userId } : {};
-    const response = await fetch(`${API_BASE_URL}/auth/kyc/initier`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload)
-    });
-    return await response.json();
-  } catch (error) {
-    return { session_id: 'mock_sess_123', verification_url: 'https://verify.didit.me/demo', status: 'initiated' };
-  }
+export const createInspection = (payload, idempotencyKey, options = {}) =>
+  apiClient.post('/inspections', payload, {
+    ...options, headers: { ...options.headers, 'Idempotency-Key': idempotencyKey },
+  });
+
+export const confirmInspection = (inspectionId, options) =>
+  apiClient.post(`/inspections/${id(inspectionId)}/confirm`, {}, options);
+
+export async function getInspections(bookingId, options) {
+  return apiClient.get(`/inspections/bookings/${id(bookingId)}`, options);
 }
 
-export async function submitDiditDocument(sessionId, imageBase64, typeDoc = 'cni') {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/kyc/document`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        session_id: sessionId,
-        image_document_base64: imageBase64,
-        type_document: typeDoc
-      })
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
+
+// Disputes
+export const getDisputes = (options) => apiClient.get('/disputes', options);
+
+export const getDispute = (disputeId, options) =>
+  apiClient.get(`/disputes/${id(disputeId)}`, options);
+
+export const getDisputeContext = (disputeId, options) =>
+  apiClient.get(`/disputes/${id(disputeId)}/context`, options);
+
+export const createDispute = (payload, idempotencyKey, options = {}) =>
+  apiClient.post('/disputes', payload, {
+    ...options, headers: { ...options.headers, 'Idempotency-Key': idempotencyKey },
+  });
+
+export const submitDisputeForReview = (disputeId, options) =>
+  apiClient.post(`/disputes/${id(disputeId)}/submit`, {}, options);
+
+export function uploadDisputeEvidence(disputeId, file, { onProgress, signal } = {}) {
+  return new Promise((resolve, reject) => {
+    const requestId = globalThis.crypto?.randomUUID?.() || `dispute-evidence-${Date.now()}`;
+    const xhr = new XMLHttpRequest();
+    const form = new FormData();
+    form.append('evidence_file', file, file.name || 'dispute-evidence');
+    const url = `${API_BASE_URL}/disputes/${id(disputeId)}/evidence`;
+    xhr.open('POST', url);
+    xhr.timeout = file.type.startsWith('video/') ? 120_000 : 45_000;
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('X-Request-ID', requestId);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+    xhr.onload = () => {
+      let payload = null;
+      try { payload = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { payload = null; }
+      if (xhr.status >= 200 && xhr.status < 300) return resolve(payload);
+      const raw = payload?.erreur ?? payload?.detail ?? payload;
+      return reject(new ApiError({
+        status: xhr.status, code: raw?.code || `HTTP_${xhr.status}`,
+        message: raw?.message || 'La pièce n’a pas pu être importée.',
+        requestId: xhr.getResponseHeader('X-Request-ID') || requestId,
+        method: 'POST', url,
+      }));
+    };
+    xhr.onerror = () => reject(new ApiError({ code: 'NETWORK_ERROR', message: 'Impossible de joindre le stockage des pièces.', requestId, method: 'POST', url }));
+    xhr.ontimeout = () => reject(new ApiError({ code: 'REQUEST_TIMEOUT', message: 'L’importation a dépassé le délai autorisé.', requestId, method: 'POST', url }));
+    xhr.onabort = () => reject(new ApiError({ code: 'REQUEST_CANCELLED', message: 'Importation annulée.', requestId, method: 'POST', url }));
+    if (signal?.aborted) return xhr.onabort();
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true });
+    xhr.send(form);
+  });
 }
 
-export async function submitDiditSelfie(sessionId, selfieBase64) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/kyc/selfie`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        session_id: sessionId,
-        image_selfie_base64: selfieBase64
-      })
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
+export const deleteDisputeEvidence = (evidenceId, options) =>
+  apiClient.delete(`/disputes/evidence/${id(evidenceId)}`, options);
 
-export async function getDiditKYCStatus(userId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/kyc/statut/${userId}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
 
-// ==============================================================================
-// 3. CATALOGUE & RECHERCHE GÉOSPATIALE POSTGIS (PHASE 3)
-// ==============================================================================
+// Contracts
+export const getContract = (bookingId, options) =>
+  apiClient.get(`/contrats/${id(bookingId)}`, options);
 
-export async function getEquipmentList(filters = {}) {
-  try {
-    const params = new URLSearchParams();
-    if (filters.city && filters.city !== 'Toutes les villes') params.append('city', filters.city);
-    if (filters.category && filters.category !== 'all') params.append('categorie', filters.category);
-    if (filters.search) params.append('q', filters.search);
-    if (filters.prix_max) params.append('prix_max', filters.prix_max);
+export const signContract = (bookingId, payload, options) =>
+  apiClient.post(`/contrats/${id(bookingId)}/signer`, payload, options);
 
-    const response = await fetch(`${API_BASE_URL}/articles?${params.toString()}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return data.donnees || data;
-  } catch (error) {
-    console.warn('API Backend unreachable, fallback to local dataset:', error);
-    return null;
-  }
-}
 
-export async function getEquipmentCategories() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/articles/categories`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    return [];
-  }
-}
+// Messaging and notifications
+export const getUserConversations = (options) =>
+  apiClient.get('/messages/conversations', options);
 
-export async function getEquipment(equipmentId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/articles/${equipmentId}`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
+export const getConversationMessages = (conversationId, options) =>
+  apiClient.get(`/messages/conversations/${id(conversationId)}`, options);
 
-export async function createEquipment(equipmentData) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/articles`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(equipmentData)
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
+export const sendConversationMessage = (conversationId, contenu, options) =>
+  apiClient.post(`/messages/conversations/${id(conversationId)}`, { contenu }, options);
 
-export async function deleteEquipment(equipmentId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/articles/${equipmentId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
-}
+export const sendMessage = (
+  destinataireId, contenu, articleId = null, reservationId = null, options,
+) => apiClient.post('/messages', {
+  destinataire_id: destinataireId,
+  contenu,
+  article_id: articleId,
+  reservation_id: reservationId,
+}, options);
 
-// ==============================================================================
-// 4. RÉSERVATIONS & PRICING DÉGRESSIF (PHASE 4)
-// ==============================================================================
+export const getNotifications = (state = 'all', options) =>
+  apiClient.get('/notifications', { ...options, query: { state } });
 
-export async function calculatePricing(articleId, startDate, endDate) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/reservations/calculer-prix`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        article_id: articleId,
-        date_debut: startDate,
-        date_fin: endDate
-      })
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    console.error('Error calculating pricing:', error);
-    return null;
-  }
-}
+export const updateNotificationRead = (notificationId, estLu, options) =>
+  apiClient.patch(`/notifications/${id(notificationId)}`, { est_lu: Boolean(estLu) }, options);
 
-export async function createBooking(articleId, startDate, endDate, messageLoueur = '') {
-  try {
-    const response = await fetch(`${API_BASE_URL}/reservations/creer`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        article_id: articleId,
-        date_debut: startDate,
-        date_fin: endDate,
-        mode_paiement: 'cash_on_delivery',
-        mode_caution: 'cash',
-        message_loueur: messageLoueur
-      })
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
+export const markAllNotificationsRead = (options) =>
+  apiClient.patch('/notifications/tout-lire', {}, options);
 
-export async function getBookings(role = 'locataire', statut = null) {
-  try {
-    const params = new URLSearchParams({ role });
-    if (statut) params.append('statut', statut);
-    const response = await fetch(`${API_BASE_URL}/reservations?${params.toString()}`, {
-      headers: getAuthHeaders()
-    });
-    const data = await response.json();
-    return data.donnees || [];
-  } catch (error) {
-    return [];
-  }
-}
 
-export async function updateBookingStatus(bookingId, newStatus) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/reservations/${bookingId}/statut`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ nouveau_statut: newStatus })
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
+// Subscriptions and earnings
+export const getSubscriptionPlans = (options) =>
+  apiClient.get('/abonnements/plans', options);
 
-// ==============================================================================
-// 5. HANDOFF PHYSIQUE & SCELLÉ SHA-256 (PHASE 5)
-// ==============================================================================
+export const getMySubscription = (options) =>
+  apiClient.get('/abonnements/moi', options);
 
-export async function submitCheckInHandoff(bookingId, photos, cashLoyer, caution, notes = '') {
-  try {
-    const response = await fetch(`${API_BASE_URL}/remises/check-in`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        booking_id: bookingId,
-        photos: photos,
-        montant_cash_loyer_recu: cashLoyer,
-        montant_caution_recue: caution,
-        notes: notes
-      })
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
+export const upgradeSubscription = (planName, options) =>
+  apiClient.post('/abonnements/upgrade', { nouveau_plan: planName }, options);
 
-export async function submitCheckOutHandoff(bookingId, photos, cautionRestituee, retenue = 0.0, notes = '') {
-  try {
-    const response = await fetch(`${API_BASE_URL}/remises/check-out`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        booking_id: bookingId,
-        photos: photos,
-        montant_caution_restituee: cautionRestituee,
-        montant_retenue_degradations: retenue,
-        notes: notes
-      })
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
-
-export async function sealInspection(bookingId, type, videoUrl = null, notes = '') {
-  return await submitCheckInHandoff(bookingId, ["https://lokiini.ma/inspection_default.jpg"], 0.0, 0.0, notes);
-}
-
-export async function verifyKYC(cinNumber) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/kyc/verify`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ cin_number: cinNumber })
-    });
-    return await response.json();
-  } catch (error) {
-    return { is_verified: true, liveness_score: 98.5, audit_proof_cndp: 'sha256_mock_cndp' };
-  }
-}
-
-export async function getInspections(bookingId) {
-  const data = await getBookingHandoffs(bookingId);
-  return data.remises || [];
-}
-
-// ==============================================================================
-// 6. BAUX DOC ART. 627+ & SIGNATURE (PHASE 6)
-// ==============================================================================
-
-export async function getContract(bookingId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/contrats/${bookingId}`, {
-      headers: getAuthHeaders()
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
-
-export async function signContract(bookingId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/contrats/${bookingId}/signer`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ consentement_explicite: true })
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
-
-// ==============================================================================
-// 7. MESSAGERIE & NOTIFICATIONS (PHASE 7)
-// ==============================================================================
-
-export async function getUserConversations() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/messages/conversations`, { headers: getAuthHeaders() });
-    return await response.json();
-  } catch (error) {
-    return [];
-  }
-}
-
-export async function getConversationMessages(conversationId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/messages/conversations/${conversationId}`, { headers: getAuthHeaders() });
-    return await response.json();
-  } catch (error) {
-    return [];
-  }
-}
-
-export async function sendMessage(destinataireId, contenu, articleId = null, reservationId = null) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/messages`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        destinataire_id: destinataireId,
-        contenu: contenu,
-        article_id: articleId,
-        reservation_id: reservationId
-      })
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
-
-export async function getNotifications() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/notifications`, { headers: getAuthHeaders() });
-    return await response.json();
-  } catch (error) {
-    return [];
-  }
-}
-
-// ==============================================================================
-// 8. ABONNEMENTS & GAINS (PHASE 8)
-// ==============================================================================
-
-export async function getSubscriptionPlans() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/abonnements/plans`);
-    return await response.json();
-  } catch (error) {
-    return [];
-  }
-}
-
-export async function getMySubscription() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/abonnements/moi`, { headers: getAuthHeaders() });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
-
-export async function upgradeSubscription(planName) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/abonnements/upgrade`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ nouveau_plan: planName })
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
-
-export async function getOwnerEarningsDashboard(periode = 'mois') {
-  try {
-    const response = await fetch(`${API_BASE_URL}/dashboard/gains?periode=${periode}`, {
-      headers: getAuthHeaders()
-    });
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
+export const getOwnerEarningsDashboard = (periode = 'mois', options) =>
+  apiClient.get('/dashboard/gains', { ...options, query: { periode } });

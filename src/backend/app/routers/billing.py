@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.database import get_db
-from app.models.models import User, Article, Reservation
+from app.models.models import User, Article, Reservation, RentalPayment, OwnerPayout, DepositRecord
 from app.schemas.billing_schemas import (
     SubscriptionPlanResponse, MySubscriptionResponse,
     SubscriptionUpgradeRequest, EarningsDashboardResponse,
@@ -14,11 +14,13 @@ from app.schemas.billing_schemas import (
 from app.services.subscription_service import subscription_service
 from app.services.earnings_service import earnings_service
 from app.routers.auth import get_current_user
+from app.core.authorization import require_resource_access
 
 router = APIRouter(tags=["Abonnements Loueurs, Dashboard des Gains & Facturation"])
 
 # 1. Catalogue des formules d'abonnement
 @router.get("/abonnements/plans", response_model=List[SubscriptionPlanResponse])
+@router.get("/tarifs/plans", response_model=List[SubscriptionPlanResponse])
 async def list_subscription_plans():
     """Liste les 4 formules d'abonnement loueur disponibles sur Lokiini."""
     return subscription_service.get_all_plans()
@@ -61,19 +63,32 @@ async def upgrade_subscription(
             detail=f"Plan '{payload.nouveau_plan}' inconnu. Choix: {list(subscription_service.PLANS.keys())}"
         )
 
-    current_user.plan_abonnement = payload.nouveau_plan
-    if payload.nouveau_plan in ["Pro", "Entreprise"]:
-        current_user.user_role = "pro_owner"
+    if payload.nouveau_plan != "Gratuit":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "PAYMENT_UNAVAILABLE", "status": "pending", "message": "Le paiement des abonnements n'est pas disponible."}
+        )
 
+    current_user.plan_abonnement = "Gratuit"
     current_user.modifie_le = datetime.utcnow()
     await db.commit()
+    return {"statut": "succes", "nouveau_plan": "Gratuit", "commission_pct": 15.0}
 
-    details = subscription_service.get_plan_details(payload.nouveau_plan)
+
+@router.post("/abonnements/annuler")
+async def cancel_subscription(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retains the legacy cancellation path in the authoritative billing domain."""
+    current_user.plan_abonnement = "Gratuit"
+    current_user.abonnement_valable_jusqu = None
+    current_user.modifie_le = datetime.utcnow()
+    await db.commit()
     return {
         "statut": "succes",
-        "message": f"Félicitations ! Vous êtes maintenant abonné au forfait {payload.nouveau_plan}.",
-        "nouveau_plan": payload.nouveau_plan,
-        "commission_pct": details["commission_pct"]
+        "nouveau_plan": "Gratuit",
+        "message": "Abonnement réinitialisé vers la formule Gratuite.",
     }
 
 # 4. Tableau de bord des gains en MAD
@@ -87,28 +102,34 @@ async def get_owner_earnings_dashboard(
     query = select(Reservation).where(Reservation.loueur_id == current_user.id)
     result = await db.execute(query)
     reservations = result.scalars().all()
+    payout_result = await db.execute(select(OwnerPayout).where(OwnerPayout.owner_id == current_user.id))
+    payouts = payout_result.scalars().all()
+    booking_ids = [r.id for r in reservations]
+    deposits = []
+    if booking_ids:
+        deposit_result = await db.execute(select(DepositRecord).where(DepositRecord.booking_id.in_(booking_ids)))
+        deposits = deposit_result.scalars().all()
 
     res_list = []
+    payouts_by_booking = {p.booking_id: p for p in payouts}
     for r in reservations:
         art_res = await db.execute(select(Article).where(Article.id == r.article_id))
         art = art_res.scalars().first()
+        payout = payouts_by_booking.get(r.id)
         res_list.append({
-            "prix_total": float(r.prix_total),
-            "frais_service": float(r.frais_service),
-            "montant_caution": float(r.montant_caution),
-            "statut_reservation": r.statut_reservation,
+            "rental_amount": float(payout.rental_amount_mad) if payout else 0,
+            "platform_fee": float(payout.platform_fee_amount_mad) if payout else 0,
+            "payout_amount": float(payout.payout_amount_mad) if payout else 0,
+            "payout_status": payout.status if payout else "not_ready",
+            "statut_reservation": r.statut,
             "article_titre": art.titre if art else "Matériel"
         })
-
-    # Si aucune réservation, injecter des données démonstratives pour les dashboards
-    if not res_list:
-        res_list = [
-            {"prix_total": 1250.0, "frais_service": 87.5, "montant_caution": 3000.0, "statut_reservation": "termine", "article_titre": "Perforateur SDS Max"},
-            {"prix_total": 2400.0, "frais_service": 168.0, "montant_caution": 4000.0, "statut_reservation": "termine", "article_titre": "Bétonnière 350L"},
-            {"prix_total": 850.0, "frais_service": 59.5, "montant_caution": 1500.0, "statut_reservation": "en_cours", "article_titre": "Nettoyeur Haute Pression"}
-        ]
-
-    return earnings_service.calculate_dashboard_metrics(res_list, periode=periode)
+    released_deposits = sum(
+        float(d.released_amount_mad) for d in deposits if d.status == "released"
+    )
+    return earnings_service.calculate_dashboard_metrics(
+        res_list, periode=periode, released_deposits_mad=released_deposits
+    )
 
 # 5. Facturation BTP & Fiscalité Marocaine
 @router.get("/factures/{booking_id}", response_model=InvoiceResponse)
@@ -122,6 +143,18 @@ async def generate_invoice(
     booking = result.scalars().first()
     if not booking:
         raise HTTPException(status_code=404, detail="Réservation introuvable.")
+    require_resource_access(current_user, booking.locataire_id, booking.loueur_id)
+    payment_result = await db.execute(
+        select(RentalPayment).where(
+            RentalPayment.booking_id == booking.id,
+            RentalPayment.status.in_(["succeeded", "partially_refunded"]),
+        ).order_by(RentalPayment.created_at.desc()).limit(1)
+    )
+    if not payment_result.scalars().first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "PAYMENT_NOT_CONFIRMED", "status": "pending", "message": "Aucun paiement confirmé ne permet d'émettre une facture."}
+        )
 
     loc_res = await db.execute(select(User).where(User.id == booking.locataire_id))
     locataire = loc_res.scalars().first()
@@ -133,13 +166,16 @@ async def generate_invoice(
     montant_ht = round(montant_total / 1.20, 2)
     montant_tva = round(montant_total - montant_ht, 2)
 
+    if not loueur or not loueur.company_ice:
+        raise HTTPException(status_code=409, detail="ICE du loueur requis pour émettre la facture.")
+
     return InvoiceResponse(
         numero_facture=f"FACT-LOKIINI-{str(booking.id)[:8].upper()}-{datetime.utcnow().year}",
         booking_id=booking.id,
         date_emission=datetime.utcnow(),
-        emetteur_societe=loueur.company_name if loueur and loueur.company_name else (loueur.nom_complet if loueur else "Loueur Partenaire Lokiini"),
-        emetteur_ice=loueur.company_ice if loueur and loueur.company_ice else "001234567000088",
-        client_nom=locataire.nom_complet if locataire else "Client Locataire",
+        emetteur_societe=loueur.company_name or loueur.nom_complet,
+        emetteur_ice=loueur.company_ice,
+        client_nom=locataire.nom_complet if locataire else "Client",
         client_ice=locataire.company_ice if locataire else None,
         montant_ht_mad=montant_ht,
         taux_tva=0.20,

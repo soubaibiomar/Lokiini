@@ -11,7 +11,7 @@ const PRICING_PLANS = [
     commission: '15% par transaction',
     description: 'Idéal pour louer du matériel occasionnel entre voisins et artisans.',
     features: [
-      'Paiement Cash on Delivery (COD)',
+      'Modalités de paiement selon disponibilité',
       'Contrat de bail numérique sous DOC',
       'État des lieux photo scellé SHA-256',
       'Support standard par email'
@@ -31,7 +31,6 @@ const PRICING_PLANS = [
       'Commission réduite à 10%',
       'Livraison express partenaire disponible',
       'Badge Confiance VIP sur le profil',
-      'Vérification KYC Didit prioritaire',
       'Support prioritaire WhatsApp'
     ],
     cta: 'Choisir la formule Premium',

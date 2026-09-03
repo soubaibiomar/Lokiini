@@ -1,0 +1,12 @@
+services:
+  backend:
+    environment:
+      - ENVIRONMENT=development
+      - SESSION_COOKIE_SECURE=false
+  meilisearch:
+    environment:
+      - MEILI_ENV=development
+
+networks:
+  lokiini_services:
+    internal: false

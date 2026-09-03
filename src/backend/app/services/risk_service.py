@@ -27,7 +27,7 @@ class RiskService:
                 "niveau_risque": "eleve",
                 "kyc_obligatoire": True,
                 "caution_obligatoire": True,
-                "label": "🔴 Matériel à Haute Valeur (KYC & Caution obligatoires)"
+                "label": "Matériel à Haute Valeur (KYC et caution obligatoires)"
             }
         
         # 2. Critères de risque Moyen

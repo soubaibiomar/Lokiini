@@ -3,19 +3,137 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light;
+
+    /* Brand and semantic color tokens, stored as RGB for Tailwind opacity support. */
+    --color-canvas: 247 244 238;
+    --color-surface: 255 255 255;
+    --color-ink: 30 41 59;
+    --color-muted: 92 106 129;
+    --color-border: 226 223 216;
+    --color-primary: 15 110 86;
+    --color-primary-hover: 11 83 65;
+    --color-primary-subtle: 230 252 245;
+    --color-action: 194 72 36;
+    --color-action-hover: 184 69 32;
+    --color-action-subtle: 255 232 204;
+    --color-success: 21 128 61;
+    --color-success-subtle: 240 253 244;
+    --color-warning: 180 83 9;
+    --color-warning-subtle: 255 251 235;
+    --color-error: 185 28 28;
+    --color-error-subtle: 254 242 242;
+    --color-info: 29 78 216;
+    --color-info-subtle: 239 246 255;
+
+    /* Shape, elevation and focus tokens. */
+    --radius-control: 0.75rem;
+    --radius-card: 1rem;
+    --radius-modal: 1.5rem;
+    --shadow-subtle: 0 1px 2px rgb(30 41 59 / 0.05);
+    --shadow-card: 0 8px 24px rgb(30 41 59 / 0.07);
+    --shadow-raised: 0 18px 48px rgb(30 41 59 / 0.16);
+    --shadow-focus: 0 0 0 3px rgb(15 110 86 / 0.22);
+  }
+
+  *,
+  *::before,
+  *::after {
+    border-color: rgb(var(--color-border));
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    background-color: #F7F4EE;
-    color: #1E293B;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    min-width: 320px;
+    background-color: rgb(var(--color-canvas));
+    color: rgb(var(--color-ink));
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Arabic', sans-serif;
+    text-rendering: optimizeLegibility;
+  }
+
+  html[dir='rtl'] body {
+    font-family: 'Noto Sans Arabic', 'Plus Jakarta Sans', sans-serif;
+    text-align: right;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Outfit', 'Noto Sans Arabic', sans-serif;
+  }
+
+  html[dir='rtl'] h1,
+  html[dir='rtl'] h2,
+  html[dir='rtl'] h3,
+  html[dir='rtl'] h4 {
+    font-family: 'Noto Sans Arabic', 'Outfit', sans-serif;
+  }
+
+  [dir='ltr'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='number'],
+  input[type='url'],
+  [data-ltr] {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--color-primary));
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: rgb(var(--color-primary));
+    color: white;
   }
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+@layer utilities {
+  html[dir='rtl'] .rtl-flip {
+    transform: scaleX(-1);
+  }
 }
 
-.badge-shadow {
-  box-shadow: 0 4px 12px rgba(15, 110, 86, 0.08);
+@layer components {
+  .ui-label {
+    @apply mb-1.5 block text-xs font-bold text-ink;
+  }
+
+  .ui-help {
+    @apply mt-1.5 text-xs leading-5 text-muted;
+  }
+
+  .ui-control {
+    @apply min-h-12 w-full rounded-control border border-border bg-surface px-3.5 text-base text-ink shadow-subtle transition-colors duration-180 placeholder:text-slate-400 hover:border-slate-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-slate-500 sm:min-h-11 sm:text-sm;
+  }
+
+  .ui-control-error {
+    @apply border-error focus:border-error focus:ring-error/20;
+  }
+
+  .glass-card {
+    @apply border border-white/60 bg-white/85 backdrop-blur-md;
+  }
+
+  .badge-shadow {
+    box-shadow: 0 4px 12px rgb(var(--color-primary) / 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

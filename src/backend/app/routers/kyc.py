@@ -1,216 +1,212 @@
+import json
 import uuid
-import hashlib
-from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+from app.core.authorization import require_resource_access
 from app.core.database import get_db
 from app.models.models import User
-from app.schemas.kyc_schemas import (
-    KYCInitiateRequest, KYCInitiateResponse,
-    KYCDocumentRequest, KYCSelfieRequest,
-    KYCVerificationResult, KYCWebhookPayload,
-    KYCStatusResponse
-)
-from app.schemas.schemas import KYCSubmissionRequest, KYCSubmissionResponse
-from app.services.didit_service import didit_service
 from app.routers.auth import get_current_user
+from app.schemas.kyc_schemas import (
+    DiditWebhookPayload,
+    KYCInitiateRequest,
+    KYCInitiateResponse,
+    KYCStatusResponse,
+)
+from app.services.didit_service import didit_service
+from app.services.kyc_lifecycle import (
+    KYCStatus,
+    KYCTransitionError,
+    apply_provider_status,
+    normalize_internal_status,
+    transition,
+)
+from app.services.notification_service import NotificationEvent, notify
 
-router = APIRouter(tags=["Conformité KYC Biométrique Didit & CNDP"])
 
-# 1. Initialiser session Didit
+router = APIRouter(tags=["KYC"])
+
+
 @router.post("/auth/kyc/initier", response_model=KYCInitiateResponse)
 @router.post("/kyc/initier", response_model=KYCInitiateResponse)
 async def initiate_kyc_session(
     payload: Optional[KYCInitiateRequest] = None,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Initialise une session de vérification biométrique Didit et retourne le token pour le SDK Web/Mobile."""
-    user_id = payload.user_id if payload and payload.user_id else current_user.id
-    
-    session_data = await didit_service.initiate_verification_session(
-        user_id=str(user_id),
-        email=current_user.email,
-        phone=current_user.telephone
-    )
-    
-    # Update didit session id on user
-    current_user.didit_session_id = session_data.get("session_id")
-    current_user.statut_verification = "en_attente"
+    """Create a hosted provider session for the authenticated user only."""
+    current_status = normalize_internal_status(current_user.statut_verification)
+    if current_status == KYCStatus.VERIFIED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "KYC_ALREADY_VERIFIED", "message": "L'identité est déjà vérifiée."},
+        )
+    if current_status in (KYCStatus.PENDING, KYCStatus.IN_REVIEW):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "KYC_IN_PROGRESS", "message": "Une vérification KYC est déjà en cours."},
+        )
+
+    try:
+        session_data = await didit_service.initiate_verification_session(user_id=str(current_user.id))
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "KYC_UNAVAILABLE",
+                "message": "Le fournisseur KYC est indisponible. Aucun résultat de vérification n'a été enregistré.",
+            },
+        )
+
+    current_user.didit_session_id = session_data["session_id"]
+    current_user.kyc_last_event_id = None
+    transition(current_user, KYCStatus.PENDING, provider_status=session_data["provider_status"])
     await db.commit()
-    
+
     return KYCInitiateResponse(
         session_id=session_data["session_id"],
-        didit_session_token=session_data.get("didit_session_token", "mock_token"),
-        verification_url=session_data.get("verification_url", f"https://verify.didit.me/{session_data['session_id']}"),
-        status="initiated"
+        session_token=session_data["session_token"],
+        verification_url=session_data["verification_url"],
+        status=KYCStatus.PENDING,
     )
 
-# 2. Upload Document CNI / Passeport
-@router.post("/auth/kyc/document", response_model=KYCVerificationResult)
-@router.post("/kyc/document", response_model=KYCVerificationResult)
-async def submit_kyc_document(
-    payload: KYCDocumentRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """Vérifie la validité du document d'identité CNI / Passeport."""
-    if len(payload.image_document_base64) < 50:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "KYC_DOC_INVALID", "message": "Document d'identité corrompu ou illisible."}
-        )
-    
-    # Simulation OCR & conformité CNDP
-    audit_hash = hashlib.sha256(f"{current_user.id}:DOC_CNI:{datetime.utcnow().isoformat()}".encode()).hexdigest()
-    
-    return KYCVerificationResult(
-        statut="en_attente",
-        liveness_score=95.0,
-        message="Document CNI reçu et validé par Didit. En attente du selfie de vivacité.",
-        session_id=payload.session_id,
-        audit_proof_cndp=audit_hash
+
+def _hosted_flow_only() -> None:
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail={
+            "code": "KYC_PROVIDER_FLOW_REQUIRED",
+            "message": "Utilisez la session hébergée du fournisseur KYC; Lokiini n'accepte pas de données biométriques.",
+        },
     )
 
-# 3. Upload Selfie Live & Test de Vivacité
-@router.post("/auth/kyc/selfie", response_model=KYCVerificationResult)
-@router.post("/kyc/selfie", response_model=KYCVerificationResult)
-async def submit_kyc_selfie(
-    payload: KYCSelfieRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """Effectue l'inférence de vivacité (liveness check) et face match."""
-    liveness_score = 98.20
-    is_approved = liveness_score >= 85.0
-    
-    current_user.kyc_liveness_score = liveness_score
-    current_user.statut_verification = "approuve" if is_approved else "rejete"
-    current_user.verifie_le = datetime.utcnow() if is_approved else None
-    await db.commit()
-    
-    audit_hash = hashlib.sha256(f"{current_user.id}:{liveness_score}:{datetime.utcnow().isoformat()}".encode()).hexdigest()
-    
-    return KYCVerificationResult(
-        statut="approuve" if is_approved else "rejete",
-        liveness_score=liveness_score,
-        message="Test de vivacité réussi avec succès. Compte certifié conforme CNDP.",
-        session_id=payload.session_id,
-        audit_proof_cndp=audit_hash
-    )
 
-# 4. Webhook Didit Callback sécurisé par HMAC-SHA256
+@router.post("/auth/kyc/document", status_code=status.HTTP_410_GONE)
+@router.post("/kyc/document", status_code=status.HTTP_410_GONE)
+async def submit_kyc_document(current_user: User = Depends(get_current_user)):
+    _hosted_flow_only()
+
+
+@router.post("/auth/kyc/selfie", status_code=status.HTTP_410_GONE)
+@router.post("/kyc/selfie", status_code=status.HTTP_410_GONE)
+async def submit_kyc_selfie(current_user: User = Depends(get_current_user)):
+    _hosted_flow_only()
+
+
 @router.post("/auth/kyc/webhook/didit")
 @router.post("/kyc/webhook/didit")
 async def didit_webhook_callback(
     request: Request,
-    x_didit_signature: Optional[str] = Header(None, alias="X-Didit-Signature"),
-    db: AsyncSession = Depends(get_db)
+    x_signature_v2: Optional[str] = Header(None, alias="X-Signature-V2"),
+    x_signature: Optional[str] = Header(None, alias="X-Signature"),
+    x_timestamp: Optional[str] = Header(None, alias="X-Timestamp"),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Webhook appelé par Didit lors de la finalisation d'une session KYC."""
+    """Apply a signed status event without persisting its biometric decision body."""
     raw_body = await request.body()
-    
-    # 1. Vérification de la signature HMAC (si présente ou hors mock test)
-    if x_didit_signature and not didit_service.verify_webhook_signature(raw_body, x_didit_signature):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"code": "KYC_HMAC_INVALID", "message": "Signature du webhook Didit invalide."}
-        )
-    
-    import json
     try:
         data = json.loads(raw_body.decode("utf-8"))
-    except Exception:
-        raise HTTPException(status_code=400, detail="Corps de requête JSON invalide.")
-        
-    user_id_str = data.get("vendor_data") or data.get("user_id")
-    if not user_id_str:
-        return {"statut": "ignore", "message": "Identifiant utilisateur absent du payload."}
-        
-    try:
-        user_id = uuid.UUID(user_id_str)
-    except ValueError:
-        return {"statut": "ignore", "message": "Format d'identifiant UUID invalide."}
-        
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalars().first()
-    if not user:
-        return {"statut": "erreur", "message": f"Utilisateur {user_id} introuvable."}
-        
-    status_str = data.get("status", "approved").lower()
-    score = float(data.get("liveness_score", 97.50))
-    
-    if status_str in ["approved", "completed"]:
-        user.statut_verification = "approuve"
-        user.kyc_liveness_score = score
-        user.verifie_le = datetime.utcnow()
-    elif status_str in ["rejected", "failed"]:
-        user.statut_verification = "rejete"
-    else:
-        user.statut_verification = "revision_manuelle"
-        
-    await db.commit()
-    
-    return {
-        "statut": "succes",
-        "user_id": str(user.id),
-        "statut_verification": user.statut_verification
-    }
-
-# 5. Consulter Statut KYC
-@router.get("/auth/kyc/statut/{user_id}", response_model=KYCStatusResponse)
-@router.get("/kyc/statut/{user_id}", response_model=KYCStatusResponse)
-async def get_kyc_status(user_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    """Consulte le statut de vérification KYC d'un utilisateur."""
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
-        
-    return KYCStatusResponse(
-        user_id=user.id,
-        statut_verification=user.statut_verification or "en_attente",
-        kyc_liveness_score=float(user.kyc_liveness_score or 0.0),
-        verifie_le=user.verifie_le,
-        didit_session_id=user.didit_session_id
-    )
-
-# 6. Endpoint de compatibilité
-@router.post("/kyc/verify", response_model=KYCSubmissionResponse)
-async def submit_kyc_verification_legacy(
-    payload: KYCSubmissionRequest,
-    user_id: Optional[uuid.UUID] = None,
-    db: AsyncSession = Depends(get_db)
-):
-    """Endpoint direct de vérification CNDP avec purge Zero-Knowledge en RAM."""
-    cleaned_cin = payload.cin_number.strip().upper()
-    if len(cleaned_cin) < 4:
+        payload = DiditWebhookPayload.model_validate(data)
+    except (UnicodeDecodeError, json.JSONDecodeError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Le format du numéro de Carte d'Identité Nationale (CIN) est invalide."
+            detail={"code": "KYC_WEBHOOK_INVALID", "message": "Payload Didit invalide."},
         )
 
-    liveness_score = 96.85
-    is_verified = liveness_score >= 85.0
+    signature_valid = False
+    if x_timestamp and x_signature_v2:
+        signature_valid = didit_service.verify_webhook_signature(
+            raw_body,
+            x_signature_v2,
+            timestamp_header=x_timestamp,
+            parsed_payload=data,
+        )
+    if x_timestamp and not signature_valid and x_signature:
+        signature_valid = didit_service.verify_webhook_signature(
+            raw_body,
+            x_signature,
+            timestamp_header=x_timestamp,
+        )
+    if not signature_valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "KYC_HMAC_INVALID", "message": "Signature ou horodatage Didit invalide."},
+        )
+    if payload.session_kind not in (None, "user", "KYC"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "KYC_SESSION_KIND_INVALID", "message": "Le webhook ne concerne pas une session KYC."},
+        )
 
-    target_id = user_id or uuid.UUID("a1111111-1111-1111-1111-111111111111")
-    result = await db.execute(select(User).where(User.id == target_id))
+    result = await db.execute(select(User).where(User.id == payload.vendor_data))
     user = result.scalars().first()
-    if user:
-        user.statut_verification = "approuve" if is_verified else "rejete"
-        user.kyc_liveness_score = liveness_score
-        user.verifie_le = datetime.utcnow()
-        user.cin_number = cleaned_cin
-        await db.commit()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur introuvable.")
+    if user.didit_session_id != payload.session_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "KYC_SESSION_MISMATCH", "message": "La session Didit ne correspond pas à l'utilisateur."},
+        )
 
-    audit_data = f"{cleaned_cin}:{liveness_score}:{datetime.utcnow().isoformat()}:CNDP_ZERO_KNOWLEDGE_RAM_PURGE"
-    audit_proof = hashlib.sha256(audit_data.encode("utf-8")).hexdigest()
+    event_id = str(payload.event_id)
+    if user.kyc_last_event_id == event_id:
+        return {"accepted": True, "duplicate": True, "status": user.statut_verification}
 
-    return KYCSubmissionResponse(
-        is_verified=is_verified,
-        liveness_score=liveness_score,
-        message="Identité marocaine vérifiée avec succès. Flux vidéo purgé de la mémoire vive conformément à la Loi n° 09-08 de la CNDP.",
-        audit_proof_cndp=audit_proof
+    try:
+        internal_status = apply_provider_status(user, payload.status)
+    except KYCTransitionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "KYC_TRANSITION_INVALID", "message": str(exc)},
+        )
+    user.kyc_last_event_id = event_id
+    kyc_copy = {
+        KYCStatus.PENDING: ("Vérification reçue", "Votre vérification d’identité est en attente de traitement."),
+        KYCStatus.IN_REVIEW: ("Vérification en cours", "Votre vérification d’identité est en cours d’examen."),
+        KYCStatus.VERIFIED: ("Identité vérifiée", "Votre identité a été vérifiée par le fournisseur configuré."),
+        KYCStatus.REJECTED: ("Vérification non validée", "La vérification d’identité n’a pas été validée."),
+        KYCStatus.REQUIRES_ACTION: ("Action de vérification requise", "Le fournisseur demande une action supplémentaire pour continuer."),
+    }
+    title, body = kyc_copy.get(
+        internal_status,
+        ("Statut de vérification mis à jour", "Le statut de votre vérification d’identité a été mis à jour."),
     )
+    notify(
+        db,
+        recipient_id=user.id,
+        event_type=NotificationEvent.KYC_UPDATED,
+        title=title,
+        body=body,
+        user_id=user.id,
+    )
+    await db.commit()
+    return {"accepted": True, "duplicate": False, "status": internal_status.value}
+
+
+@router.get("/auth/kyc/statut/{user_id}", response_model=KYCStatusResponse)
+@router.get("/kyc/statut/{user_id}", response_model=KYCStatusResponse)
+async def get_kyc_status(
+    user_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur introuvable.")
+    require_resource_access(current_user, user.id)
+    return KYCStatusResponse(
+        user_id=user.id,
+        status=normalize_internal_status(user.statut_verification),
+        verified_at=user.verifie_le,
+        session_id=user.didit_session_id,
+    )
+
+
+@router.post("/kyc/verify", status_code=status.HTTP_410_GONE)
+async def submit_kyc_verification_legacy(current_user: User = Depends(get_current_user)):
+    _hosted_flow_only()

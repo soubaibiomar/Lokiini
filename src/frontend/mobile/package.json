@@ -2,6 +2,10 @@
   "name": "lokiini-mobile",
   "version": "1.0.0",
   "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "validate:config": "expo config --type public",
+    "validate:bundle": "expo export --platform android --output-dir dist-ci",
+    "validate": "npm run lint && npm run validate:config && npm run validate:bundle",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
@@ -15,11 +19,17 @@
     "expo-camera": "~15.0.0",
     "expo-image-picker": "~15.0.0",
     "expo-crypto": "~13.0.0",
+    "firebase": "^12.18.0",
+    "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/bottom-tabs": "^6.5.20"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0"
   },
   "private": true
 }

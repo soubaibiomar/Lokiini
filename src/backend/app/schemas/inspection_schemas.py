@@ -1,7 +1,81 @@
 import uuid
-from typing import Optional, List, Dict, Any
+from typing import Literal, Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+
+class InspectionRequirementsResponse(BaseModel):
+    booking_id: uuid.UUID
+    inspection_type: Literal["check_in", "check_out"]
+    minimum_photos: int = 3
+    video_required: bool
+    photo_max_bytes: int
+    video_max_bytes: int
+    allowed_booking_statuses: List[str]
+
+
+class InspectionEvidenceResponse(BaseModel):
+    id: uuid.UUID
+    reservation_id: uuid.UUID
+    equipment_id: uuid.UUID
+    renter_id: uuid.UUID
+    owner_id: uuid.UUID
+    uploaded_by_id: uuid.UUID
+    inspection_type: Literal["check_in", "check_out"]
+    media_kind: Literal["photo", "video"]
+    original_filename: str
+    content_type: str
+    size_bytes: int
+    sha256_hash: str
+    stored_at: datetime
+    file_url: str
+
+
+class StructuredInspectionCreateRequest(BaseModel):
+    booking_id: uuid.UUID
+    inspection_type: Literal["check_in", "check_out"]
+    evidence_ids: List[uuid.UUID] = Field(..., min_length=3, max_length=11)
+    condition: Literal["excellent", "good", "fair", "damaged"]
+    existing_damage: Optional[str] = Field(default=None, max_length=3000)
+    accessories: List[str] = Field(default_factory=list, max_length=30)
+    serial_number: Optional[str] = Field(default=None, max_length=150)
+    meter_type: Literal["none", "odometer", "hours"] = "none"
+    meter_reading: Optional[float] = Field(default=None, ge=0)
+    notes: Optional[str] = Field(default=None, max_length=3000)
+    confirmed: bool
+
+    @model_validator(mode="after")
+    def validate_meter_and_confirmation(self):
+        if self.meter_type == "none" and self.meter_reading is not None:
+            raise ValueError("meter_reading requires odometer or hours")
+        if self.meter_type != "none" and self.meter_reading is None:
+            raise ValueError("meter_reading is required for the selected meter type")
+        if not self.confirmed:
+            raise ValueError("Inspection confirmation is required")
+        return self
+
+
+class InspectionDetailResponse(BaseModel):
+    id: uuid.UUID
+    reservation_id: uuid.UUID
+    equipment_id: uuid.UUID
+    renter_id: uuid.UUID
+    owner_id: uuid.UUID
+    submitted_by_id: Optional[uuid.UUID] = None
+    inspection_type: str
+    condition: Optional[str] = None
+    existing_damage: Optional[str] = None
+    accessories: List[str] = Field(default_factory=list)
+    serial_number: Optional[str] = None
+    meter_type: Optional[str] = None
+    meter_reading: Optional[float] = None
+    notes: Optional[str] = None
+    status: str
+    confirmed_by_owner: bool
+    confirmed_by_renter: bool
+    recorded_at: datetime
+    confirmed_at: Optional[datetime] = None
+    evidence: List[InspectionEvidenceResponse] = Field(default_factory=list)
 
 class CheckInSubmissionRequest(BaseModel):
     booking_id: uuid.UUID
@@ -23,23 +97,46 @@ class CheckOutSubmissionRequest(BaseModel):
     montant_caution_restituee: float = Field(..., ge=0)
     montant_retenue_degradations: Optional[float] = 0.0
 
-class InspectionSealResponse(BaseModel):
-    id: uuid.UUID
+class HandoffSubmissionRequest(BaseModel):
     booking_id: uuid.UUID
-    type: str # check_in, check_out, retrait, retour
-    sha256_seal: str
-    rfc3161_timestamp: datetime
-    photos_count: int
+    type: str
+    video_url: Optional[str] = None
+    photos: List[str] = Field(default_factory=list)
+    videos: List[str] = Field(default_factory=list)
     notes: Optional[str] = None
-    statut_reservation_suivant: str
-    message: str
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    signed_by_owner: bool = False
+    signed_by_renter: bool = False
 
-class CashReceiptResponse(BaseModel):
-    receipt_id: str
-    booking_id: uuid.UUID
-    montant_loyer_mad: float
-    montant_caution_mad: float
-    date_emission: datetime
-    emetteur_nom: str
-    receveur_nom: str
-    statut: str = "valide"
+
+InspectionCreateRequest = HandoffSubmissionRequest
+
+
+class RemiseCreateRequest(BaseModel):
+    photos: List[str] = Field(default_factory=list)
+    videos: List[str] = Field(default_factory=list)
+    geolocalisation: Optional[Dict[str, Any]] = None
+    signatures: Dict[str, Any] = Field(default_factory=dict)
+    notes: Optional[str] = None
+
+
+class RemiseResponse(BaseModel):
+    id: uuid.UUID
+    reservation_id: uuid.UUID
+    type: str
+    photos: List[str] = Field(default_factory=list)
+    videos: List[str] = Field(default_factory=list)
+    geolocalisation: Optional[Dict[str, Any]] = None
+    horodatage: Optional[datetime] = None
+    statut: Optional[str] = None
+    notes: Optional[str] = None
+    cree_le: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CashConfirmationRequest(BaseModel):
+    montant_recu: float = Field(..., ge=0)
+    notes: Optional[str] = None

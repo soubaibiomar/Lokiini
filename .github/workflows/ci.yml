@@ -1,0 +1,331 @@
+name: Pull request quality
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20.19.5"
+
+jobs:
+  backend-quality:
+    name: Backend lint, format and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src/backend
+    env:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://lokiini_test:lokiini_test_password@127.0.0.1:5432/lokiini_test
+      MEILISEARCH_MASTER_KEY: lokiini-ci-search-key
+      MEILISEARCH_URL: http://127.0.0.1:7700
+      CORS_ALLOWED_ORIGINS: http://localhost
+      PAYMENT_WEBHOOK_SECRET: lokiini-ci-payment-webhook-secret-32-characters
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            src/backend/requirements.txt
+            src/backend/requirements-test.txt
+
+      - name: Install backend quality dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-test.txt
+
+      - name: Lint backend for correctness errors
+        run: ruff check app tests scripts alembic
+
+      - name: Check formatting of changed Python files
+        shell: bash
+        working-directory: .
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [[ -z "$BASE_SHA" ]]; then
+            BASE_SHA="$(git rev-parse HEAD^)"
+          fi
+          mapfile -t changed_files < <(
+            git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" -- 'src/backend/**/*.py'
+          )
+          if (( ${#changed_files[@]} == 0 )); then
+            echo "No changed Python files require formatting validation."
+            exit 0
+          fi
+          ruff format --check "${changed_files[@]}"
+
+      - name: Run backend unit and contract tests
+        run: pytest -q -m "not integration"
+
+  web-quality:
+    name: Web lint, types, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src/frontend/web
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: src/frontend/web/package-lock.json
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Lint web application
+        run: npm run lint
+
+      - name: Validate TypeScript API contract
+        run: npm run typecheck
+
+      - name: Run web tests
+        run: npm test
+
+      - name: Build production web application
+        env:
+          VITE_API_URL: /api/v1
+        run: npm run build
+
+  mobile-quality:
+    name: Mobile lint, config and Android bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: src/frontend/mobile
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: src/frontend/mobile/package-lock.json
+
+      - name: Install mobile dependencies
+        run: npm ci
+
+      - name: Validate mobile application
+        env:
+          CI: "1"
+          EXPO_NO_TELEMETRY: "1"
+        run: npm run validate
+
+  migrations-and-e2e:
+    name: PostgreSQL migrations and critical journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4-alpine
+        env:
+          POSTGRES_DB: lokiini_test
+          POSTGRES_USER: lokiini_test
+          POSTGRES_PASSWORD: lokiini_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lokiini_test -d lokiini_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    defaults:
+      run:
+        working-directory: src/backend
+    env:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://lokiini_test:lokiini_test_password@127.0.0.1:5432/lokiini_test
+      LOKIINI_TEST_DATABASE_URL: postgresql+asyncpg://lokiini_test:lokiini_test_password@127.0.0.1:5432/lokiini_test
+      MEILISEARCH_MASTER_KEY: lokiini-ci-search-key
+      MEILISEARCH_URL: http://127.0.0.1:7700
+      CORS_ALLOWED_ORIGINS: http://localhost
+      PAYMENT_WEBHOOK_SECRET: lokiini-ci-payment-webhook-secret-32-characters
+      DIDIT_API_KEY: lokiini-ci-didit-api-key
+      DIDIT_WEBHOOK_SECRET: lokiini-ci-didit-webhook-secret
+      DIDIT_WORKFLOW_ID: lokiini-ci-didit-workflow
+      INSPECTION_EVIDENCE_DIR: /tmp/lokiini-inspection-evidence
+      DISPUTE_EVIDENCE_DIR: /tmp/lokiini-dispute-evidence
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            src/backend/requirements.txt
+            src/backend/requirements-test.txt
+
+      - name: Install backend test dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements-test.txt
+
+      - name: Validate migration head and model drift
+        run: |
+          alembic upgrade head
+          alembic check
+
+      - name: Validate migration rollback and clean upgrade
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+
+      - name: Run critical PostgreSQL journey
+        run: pytest -q -m integration
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Scan pull request commits for secrets
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [[ -z "$BASE_SHA" ]]; then
+            BASE_SHA="$(git rev-parse HEAD^)"
+          fi
+          docker run --rm \
+            -v "$PWD:/repo" \
+            ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            git /repo --redact --no-banner --log-opts="$BASE_SHA..$GITHUB_SHA"
+
+  dependency-audit:
+    name: Dependency audit (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            runtime: python
+          - name: web
+            runtime: node
+            directory: src/frontend/web
+          - name: mobile
+            runtime: node
+            directory: src/frontend/mobile
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        if: matrix.runtime == 'python'
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install pip-audit
+        if: matrix.runtime == 'python'
+        run: python -m pip install --disable-pip-version-check pip-audit==2.10.1
+
+      - name: Audit backend production dependencies
+        if: matrix.runtime == 'python'
+        run: pip-audit -r src/backend/requirements.txt --strict --progress-spinner off
+
+      - name: Set up Node.js
+        if: matrix.runtime == 'node'
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Audit JavaScript dependency lockfile
+        if: matrix.runtime == 'node'
+        working-directory: ${{ matrix.directory }}
+        run: npm audit --package-lock-only --audit-level=high
+
+  docker-build:
+    name: Docker build (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: src/backend
+            dockerfile: src/backend/Dockerfile
+          - name: web
+            context: src/frontend/web
+            dockerfile: src/frontend/web/Dockerfile
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Build production image without publishing
+        run: >-
+          docker build
+          --target production
+          --file ${{ matrix.dockerfile }}
+          --tag lokiini-${{ matrix.name }}:ci
+          ${{ matrix.context }}
+
+  quality-gate:
+    name: Required quality gate
+    if: always()
+    needs:
+      - backend-quality
+      - web-quality
+      - mobile-quality
+      - migrations-and-e2e
+      - secret-scan
+      - dependency-audit
+      - docker-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every quality job to pass
+        env:
+          BACKEND_RESULT: ${{ needs.backend-quality.result }}
+          WEB_RESULT: ${{ needs.web-quality.result }}
+          MOBILE_RESULT: ${{ needs.mobile-quality.result }}
+          MIGRATION_E2E_RESULT: ${{ needs.migrations-and-e2e.result }}
+          SECRET_RESULT: ${{ needs.secret-scan.result }}
+          DEPENDENCY_RESULT: ${{ needs.dependency-audit.result }}
+          DOCKER_RESULT: ${{ needs.docker-build.result }}
+        run: |
+          for result in \
+            "$BACKEND_RESULT" \
+            "$WEB_RESULT" \
+            "$MOBILE_RESULT" \
+            "$MIGRATION_E2E_RESULT" \
+            "$SECRET_RESULT" \
+            "$DEPENDENCY_RESULT" \
+            "$DOCKER_RESULT"; do
+            if [[ "$result" != "success" ]]; then
+              echo "A required quality job did not pass: $result"
+              exit 1
+            fi
+          done
+          echo "All required Lokiini quality gates passed."

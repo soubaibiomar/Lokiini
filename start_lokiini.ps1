@@ -10,10 +10,10 @@ try {
 }
 
 Write-Host "`n[1/3] Construction et demarrage des conteneurs Docker..." -ForegroundColor Yellow
-docker compose up --build -d
+docker compose -f docker-compose.yml -f docker-compose.development.yml up --build -d
 
 Write-Host "`n[2/3] Verification des conteneurs actifs..." -ForegroundColor Yellow
-docker compose ps
+docker compose -f docker-compose.yml -f docker-compose.development.yml ps
 
 Write-Host "`n==============================================================================" -ForegroundColor Cyan
 Write-Host " LOKIINI EST OPERATIONNEL !" -ForegroundColor Green
@@ -22,5 +22,5 @@ Write-Host "  - Portail Web Lokiini  : http://localhost (ou http://localhost:300
 Write-Host "  - API Backend Swagger  : http://localhost/docs (ou http://localhost:8000/docs)" -ForegroundColor White
 Write-Host "  - Moteur n8n           : http://localhost/n8n/ (ou http://localhost:5678)" -ForegroundColor White
 Write-Host "  - Moteur Meilisearch   : http://localhost:7700" -ForegroundColor White
-Write-Host "  - Base PostgreSQL 16   : localhost:5432 (lokiini_user / lokiini_secure_pass_2026)" -ForegroundColor White
+Write-Host "  - Base PostgreSQL 16   : localhost:5432 (identifiants charges depuis .env)" -ForegroundColor White
 Write-Host "==============================================================================`n" -ForegroundColor Cyan

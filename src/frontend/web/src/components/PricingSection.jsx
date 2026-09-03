@@ -4,6 +4,14 @@ import { Check, Zap, Sparkles, Building2, Shield, ArrowRight, Star } from 'lucid
 export default function PricingSection({ onSelectPlan, onOpenAuth }) {
   const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'annual'
 
+  const changeBillingCycleFromKeyboard = (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const nextCycle = event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'Home' ? 'monthly' : 'annual';
+    setBillingCycle(nextCycle);
+    event.currentTarget.parentElement?.querySelector(`[data-billing-cycle="${nextCycle}"]`)?.focus();
+  };
+
   const plans = [
     {
       id: 'Gratuit',
@@ -19,11 +27,10 @@ export default function PricingSection({ onSelectPlan, onOpenAuth }) {
       buttonVariant: 'outline',
       features: [
         '3 annonces actives simultanées',
-        'Caution séquestrée non débitée CMI',
+        'Paiement et dépôt suivis séparément',
         'Contrats de bail DOC (Art. 627+)',
-        'Vérification d\'identité CIN (Loi 09-08)',
         'Commission standard de 15%',
-        'Paiement Cash COD ou Carte CMI',
+        'Moyens de paiement selon disponibilité',
         'Support standard par email'
       ]
     },
@@ -57,7 +64,7 @@ export default function PricingSection({ onSelectPlan, onOpenAuth }) {
       priceAnnual: 119,
       commission: '7%',
       maxListings: 'Annonces Illimitées',
-      badge: 'Le Plus Populaire 🔥',
+      badge: 'Le Plus Populaire',
       highlight: true,
       buttonText: 'Souscrire au Forfait Pro',
       buttonVariant: 'primary',
@@ -106,17 +113,23 @@ export default function PricingSection({ onSelectPlan, onOpenAuth }) {
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             <span>Monétisez votre matériel en toute sécurité</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-stone-900 tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-stone-900 tracking-tight">
             Tarifs Transparents & <span className="text-lokiini-teal">Formules d'Abonnement</span>
-          </h2>
+          </h1>
           <p className="mt-4 text-base text-stone-600">
             Publiez gratuitement vos premiers équipements ou passez au forfait Pro pour booster votre rentabilité avec des commissions réduites dès <span className="font-bold text-stone-900">7%</span> et des factures avec <span className="font-bold text-stone-900">ICE & TVA</span> déductibles.
           </p>
 
           {/* Billing Cycle Switcher */}
-          <div className="mt-8 inline-flex items-center bg-stone-100 p-1.5 rounded-2xl border border-stone-200 shadow-inner">
+          <div role="radiogroup" aria-label="Période de facturation" className="mt-8 inline-flex items-center bg-stone-100 p-1.5 rounded-2xl border border-stone-200 shadow-inner">
             <button
+              type="button"
+              role="radio"
+              aria-checked={billingCycle === 'monthly'}
+              tabIndex={billingCycle === 'monthly' ? 0 : -1}
+              data-billing-cycle="monthly"
               onClick={() => setBillingCycle('monthly')}
+              onKeyDown={changeBillingCycleFromKeyboard}
               className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
                 billingCycle === 'monthly'
                   ? 'bg-white text-stone-900 shadow-sm'
@@ -126,7 +139,13 @@ export default function PricingSection({ onSelectPlan, onOpenAuth }) {
               Facturation Mensuelle
             </button>
             <button
+              type="button"
+              role="radio"
+              aria-checked={billingCycle === 'annual'}
+              tabIndex={billingCycle === 'annual' ? 0 : -1}
+              data-billing-cycle="annual"
               onClick={() => setBillingCycle('annual')}
+              onKeyDown={changeBillingCycleFromKeyboard}
               className={`flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold transition-all ${
                 billingCycle === 'annual'
                   ? 'bg-lokiini-teal text-white shadow-sm'
@@ -169,7 +188,7 @@ export default function PricingSection({ onSelectPlan, onOpenAuth }) {
                 <div>
                   {/* Title & Subtitle */}
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-stone-900">{plan.name}</h3>
+                    <h2 className="text-xl font-bold text-stone-900">{plan.name}</h2>
                     <p className="text-xs text-stone-500 mt-1 min-h-[32px]">{plan.subtitle}</p>
                   </div>
 
@@ -210,6 +229,7 @@ export default function PricingSection({ onSelectPlan, onOpenAuth }) {
                 {/* Action CTA Button */}
                 <div>
                   <button
+                    type="button"
                     onClick={() => {
                       if (onSelectPlan) onSelectPlan(plan.id);
                       else if (onOpenAuth) onOpenAuth();
@@ -239,7 +259,7 @@ export default function PricingSection({ onSelectPlan, onOpenAuth }) {
               <Building2 className="w-6 h-6 text-lokiini-teal" />
             </div>
             <div>
-              <h4 className="text-base font-bold">Entreprise, Agence Événementielle, Studio ou Société de Location ?</h4>
+              <h2 className="text-base font-bold">Entreprise, Agence Événementielle, Studio ou Société de Location ?</h2>
               <p className="text-xs text-stone-300 mt-1">
                 Toutes nos factures comportent l'ICE, la TVA déductible à 20% et la conformité juridique au Dahir des Obligations et Contrats (DOC).
               </p>

@@ -48,8 +48,8 @@ def test_subscription_tier_details():
 def test_earnings_service_calculations():
     """Test aggregation of earnings, commissions, and nets."""
     data = [
-        {"prix_total": 1000.0, "frais_service": 70.0, "montant_caution": 2000.0, "statut_reservation": "termine", "article_titre": "Perforateur"},
-        {"prix_total": 2000.0, "frais_service": 140.0, "montant_caution": 4000.0, "statut_reservation": "termine", "article_titre": "Bétonnière"}
+        {"rental_amount": 1000.0, "platform_fee": 70.0, "payout_amount": 930.0, "payout_status": "paid", "statut_reservation": "termine", "article_titre": "Perforateur"},
+        {"rental_amount": 2000.0, "platform_fee": 140.0, "payout_amount": 1860.0, "payout_status": "paid", "statut_reservation": "termine", "article_titre": "Bétonnière"}
     ]
     
     metrics = earnings_service.calculate_dashboard_metrics(data, "mois")
@@ -58,6 +58,7 @@ def test_earnings_service_calculations():
     assert metrics["total_gains_nets_mad"] == 2790.0
     assert metrics["nombre_locations_terminees"] == 2
     assert len(metrics["top_articles_rentables"]) == 2
+    assert metrics["payout_status"] == "paid"
 
 def test_invoice_calculation():
     """Test invoice TVA calculation."""
@@ -74,7 +75,9 @@ def test_billing_routes_integrity():
     paths = app.openapi()["paths"]
     
     assert "/api/v1/abonnements/plans" in paths
+    assert "/api/v1/tarifs/plans" in paths
     assert "/api/v1/abonnements/moi" in paths
     assert "/api/v1/abonnements/upgrade" in paths
+    assert "/api/v1/abonnements/annuler" in paths
     assert "/api/v1/dashboard/gains" in paths
     assert "/api/v1/factures/{booking_id}" in paths

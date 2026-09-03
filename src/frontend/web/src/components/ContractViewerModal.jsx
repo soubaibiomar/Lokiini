@@ -1,184 +1,254 @@
-import React, { useState, useEffect } from 'react';
-import { X, FileText, Download, ShieldCheck, Printer, CheckCircle2 } from 'lucide-react';
-import { getContract } from '../services/api';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  CalendarDays, Check, Download, FileCheck2, FileText, Languages, Package,
+  Printer, RefreshCw, ShieldAlert, UserRound,
+} from 'lucide-react';
 
-export default function ContractViewerModal({ isOpen, onClose, bookingId, bookingData }) {
+import { getContract, signContract } from '../services/api';
+import {
+  Badge, Button, Card, Checkbox, ErrorState, Modal, Skeleton, Stepper,
+} from './ui';
+
+const money = new Intl.NumberFormat('fr-MA', { style: 'currency', currency: 'MAD' });
+
+const CONTRACT_STEPS = [
+  { label: 'Réservation confirmée', description: 'Validée par le backend' },
+  { label: 'Contrat généré', description: 'Version française disponible' },
+  { label: 'Revue des parties', description: 'Propriétaire et locataire' },
+  { label: 'Acceptation', description: 'Prestataire requis' },
+  { label: 'Document final', description: 'Après les deux signatures' },
+];
+
+function formatDate(value) {
+  if (!value) return 'Date indisponible';
+  const parsed = new Date(`${String(value).slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return 'Date indisponible';
+  return new Intl.DateTimeFormat('fr-MA', { day: 'numeric', month: 'long', year: 'numeric' }).format(parsed);
+}
+
+function signaturePresentation(status, available) {
+  if (status === 'signed') return { label: 'Accepté et signé', tone: 'success' };
+  if (!available || status === 'unavailable') return { label: 'Signature indisponible', tone: 'neutral' };
+  return { label: 'Acceptation en attente', tone: 'warning' };
+}
+
+function PartyCard({ title, party, accent = 'primary' }) {
+  return (
+    <Card className="p-4">
+      <div className="flex items-start gap-3">
+        <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${accent === 'action' ? 'bg-action-subtle text-action' : 'bg-primary-subtle text-primary'}`}>
+          <UserRound aria-hidden="true" className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted">{title}</p>
+          <p className="mt-1 font-display text-base font-bold text-ink">{party?.name || 'Information indisponible'}</p>
+          {party?.company_name && <p className="mt-1 text-sm text-muted">{party.company_name}</p>}
+          {party?.company_ice && <p className="mt-1 text-xs text-muted">ICE : {party.company_ice}</p>}
+          {party?.city && <p className="mt-1 text-xs text-muted">{party.city}</p>}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function ContractSkeleton() {
+  return (
+    <div className="space-y-5" aria-label="Chargement du contrat">
+      <Skeleton className="h-24 w-full" />
+      <div className="grid gap-4 sm:grid-cols-2"><Skeleton className="h-32" /><Skeleton className="h-32" /></div>
+      <Skeleton className="h-72 w-full" />
+    </div>
+  );
+}
+
+export default function ContractViewerModal({ isOpen, onClose, bookingId, onContractUpdated }) {
   const [contract, setContract] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [language, setLanguage] = useState('fr');
+  const [consented, setConsented] = useState(false);
+  const [signing, setSigning] = useState(false);
+  const [signError, setSignError] = useState(null);
 
-  useEffect(() => {
-    if (!isOpen || !bookingId) return;
-
-    async function loadContract() {
-      setLoading(true);
-      const data = await getContract(bookingId);
-      if (data) {
-        setContract(data);
-      } else {
-        // Fallback local contract data
-        setContract({
-          booking_id: bookingId,
-          contract_reference: `DOC-MAROC-${String(bookingId).substring(0, 8).toUpperCase()}`,
-          legal_framework: "Dahir des Obligations et Contrats (DOC) & Loi 53-05 Maroc",
-          contract_date: new Date().toLocaleDateString('fr-FR'),
-          renter_name: bookingData?.renter_name || "Karim Tazi",
-          renter_cin: "BK849201",
-          renter_phone: "+212 6 62 00 00 02",
-          owner_name: bookingData?.owner_name || "Lokiini Loueur Partenaire",
-          owner_company: bookingData?.owner_company || "Entreprise Loueur Partenaire",
-          owner_ice: bookingData?.owner_ice || "002345678000045",
-          equipment_title: bookingData?.equipment_title || "Matériel / Équipement Certifié",
-          equipment_category: bookingData?.category || "Matériel & Équipement",
-          rental_period: `${bookingData?.start_date || '2026-08-28'} au ${bookingData?.end_date || '2026-08-31'} (${bookingData?.total_days || 3} jours)`,
-          daily_rate_mad: bookingData?.daily_rate_applied_mad || 180,
-          total_rental_mad: bookingData?.rental_total_mad || 540,
-          cmi_deposit_hold_mad: bookingData?.deposit_hold_mad || 1500,
-          cmi_auth_token: bookingData?.cmi_auth_token || "CMI_AUTH_89421A9E",
-          sha256_seal: bookingData?.contract_sha256 || "7b2a94f1c3098e72ba6301fa38290f9b6910a301db54321fa98bc1948301ec74",
-          legal_clauses: [
-            "Article 1 — Objet : Le présent contrat de louage de chose mobilière (matériel audiovisuel, événementiel, outillage, véhicules, high-tech, médical, énergie et engins) est régi par les dispositions des articles 627 et suivants du Dahir des Obligations et Contrats (DOC) du Royaume du Maroc.",
-            "Article 2 — Équipement loué : Matériel mis à disposition en parfait état de fonctionnement avec vérification contradictoire d'entrée horodatée RFC 3161.",
-            "Article 3 — Cautionnement CMI : Une pré-autorisation bancaire de garantie est bloquée sous séquestre électronique CMI sans débit immédiat.",
-            "Article 4 — Signature & Force Probante : En application de la Loi n° 53-05 relative à l'échange électronique de données juridiques, le présent acte a pleine valeur probatoire entre les parties.",
-            "Article 5 — Juridiction : Tout litige relève de la compétence exclusive du Tribunal de Commerce compétent au Royaume du Maroc."
-          ]
-        });
+  const loadContract = useCallback(async (signal) => {
+    if (!bookingId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getContract(bookingId, { signal });
+      setContract(data);
+      setLanguage(data?.language || 'fr');
+    } catch (requestError) {
+      if (requestError?.code !== 'REQUEST_CANCELLED') {
+        setContract(null);
+        setError(requestError);
       }
+    } finally {
       setLoading(false);
     }
-    loadContract();
-  }, [isOpen, bookingId, bookingData]);
+  }, [bookingId]);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen || !bookingId) return undefined;
+    const controller = new AbortController();
+    setConsented(false);
+    setSignError(null);
+    loadContract(controller.signal);
+    return () => controller.abort();
+  }, [isOpen, bookingId, loadContract]);
+
+  const currentStep = useMemo(() => {
+    if (contract?.completed) return 4;
+    if (contract?.owner_signature_status === 'signed' || contract?.renter_signature_status === 'signed') return 3;
+    return 2;
+  }, [contract]);
+
+  const contractText = language === 'ar' ? contract?.contract_text_ar : contract?.contract_text;
+  const availableLanguages = contract?.available_languages || ['fr'];
+  const ownerSignature = signaturePresentation(contract?.owner_signature_status, contract?.signature_available);
+  const renterSignature = signaturePresentation(contract?.renter_signature_status, contract?.signature_available);
+
+  const downloadText = () => {
+    if (!contractText) return;
+    const blob = new Blob([contractText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${contract.contract_number || 'contrat-lokiini'}.${language}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const acceptContract = async () => {
+    if (!consented || !contract?.signature_available) return;
+    setSigning(true);
+    setSignError(null);
+    try {
+      await signContract(bookingId, { consentement_explicite: true });
+      await loadContract();
+      onContractUpdated?.();
+    } catch (requestError) {
+      setSignError(requestError?.message || 'L’acceptation du contrat n’a pas pu être enregistrée.');
+    } finally {
+      setSigning(false);
+    }
+  };
+
+  const errorDescription = error?.code === 'CONTRACT_NOT_READY'
+    ? 'Le contrat sera disponible lorsque la réservation atteindra le statut confirmé.'
+    : error?.message || 'Le contrat ne peut pas être chargé pour le moment.';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-stone-200 animate-in fade-in zoom-in duration-200 my-8 flex flex-col max-h-[90vh]">
-        
-        {/* Modal Top Controls */}
-        <div className="flex items-center justify-between pb-4 border-b border-stone-200 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-lokiini-teal">
-              <FileText className="w-6 h-6" />
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="Contrat de location"
+      description={contract?.contract_number || 'Document associé à la réservation'}
+      size="xl"
+    >
+      {loading ? <ContractSkeleton /> : error ? (
+        <ErrorState
+          title={error?.code === 'CONTRACT_NOT_READY' ? 'Contrat pas encore disponible' : 'Contrat indisponible'}
+          description={errorDescription}
+          onRetry={() => loadContract()}
+        />
+      ) : contract && (
+        <div className="space-y-6">
+          <section aria-labelledby="contract-progress-title">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 id="contract-progress-title" className="font-display text-lg font-bold text-ink">Progression du contrat</h3>
+                <p className="mt-1 text-sm text-muted">Chaque étape dépend des capacités réellement disponibles côté backend.</p>
+              </div>
+              <Badge variant={contract.completed ? 'success' : 'info'}>{contract.completed ? 'Contrat finalisé' : 'Version à relire'}</Badge>
             </div>
-            <div>
-              <h3 className="font-black text-lg text-lokiini-charcoal font-['Outfit']">Contrat de Bail Numérique DOC</h3>
-              <span className="text-xs text-stone-500">Conforme au Dahir des Obligations et Contrats & Loi 53-05</span>
+            <Stepper steps={CONTRACT_STEPS} current={currentStep} className="mt-5" />
+          </section>
+
+          {!contract.signature_available && (
+            <div role="status" className="flex items-start gap-3 rounded-card border border-warning/25 bg-warning-subtle p-4">
+              <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-warning" />
+              <div>
+                <p className="text-sm font-bold text-ink">Acceptation et signature non disponibles</p>
+                <p className="mt-1 text-xs leading-5 text-muted">Aucun prestataire de signature professionnellement validé n’est configuré. Lokiini permet la consultation du contrat, mais ne présente ni signature qualifiée ni certificat.</p>
+              </div>
             </div>
+          )}
+
+          <section aria-labelledby="contract-parties-title">
+            <h3 id="contract-parties-title" className="font-display text-lg font-bold text-ink">Les parties</h3>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <PartyCard title="Propriétaire" party={contract.owner} />
+              <PartyCard title="Locataire" party={contract.renter} accent="action" />
+            </div>
+          </section>
+
+          <section aria-labelledby="contract-rental-title">
+            <h3 id="contract-rental-title" className="font-display text-lg font-bold text-ink">Location concernée</h3>
+            <Card className="mt-3 overflow-hidden">
+              <div className="grid gap-5 p-5 lg:grid-cols-[1.4fr_1fr]">
+                <div>
+                  <div className="flex items-start gap-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-muted"><Package aria-hidden="true" className="size-5" /></span>
+                    <div><p className="font-display text-lg font-bold text-ink">{contract.equipment?.title}</p><p className="mt-1 text-xs text-muted">{contract.equipment?.category}</p></div>
+                  </div>
+                  {contract.equipment?.description && <p className="mt-4 text-sm leading-6 text-muted">{contract.equipment.description}</p>}
+                </div>
+                <dl className="space-y-3 rounded-control bg-stone-50 p-4 text-sm">
+                  <div><dt className="text-xs font-bold text-muted">Période</dt><dd className="mt-1 flex items-start gap-2 font-semibold text-ink"><CalendarDays aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />{formatDate(contract.start_date)} — {formatDate(contract.end_date)}</dd></div>
+                  <div><dt className="text-xs font-bold text-muted">Durée enregistrée</dt><dd className="mt-1 font-semibold text-ink">{contract.number_of_days} jour{contract.number_of_days > 1 ? 's' : ''}</dd></div>
+                </dl>
+              </div>
+              <div className="grid border-t border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
+                <div className="p-5"><p className="text-xs font-bold uppercase tracking-wide text-muted">Prix de location</p><p className="mt-2 font-display text-2xl font-bold text-primary">{money.format(contract.rental_price_mad)}</p><p className="mt-1 text-xs text-muted">{contract.payment_method}</p></div>
+                <div className="border-t border-border p-5 sm:border-t-0"><p className="text-xs font-bold uppercase tracking-wide text-muted">Dépôt de garantie</p><p className="mt-2 font-display text-2xl font-bold text-action">{money.format(contract.deposit_amount_mad)}</p><p className="mt-1 text-xs text-muted">{contract.deposit_method}</p></div>
+              </div>
+            </Card>
+          </section>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card className="p-5"><h3 className="font-display text-base font-bold text-ink">Responsabilités</h3><ul className="mt-3 space-y-2">{contract.responsibilities?.map((item) => <li key={item} className="flex items-start gap-2 text-sm leading-6 text-muted"><Check aria-hidden="true" className="mt-1 size-4 shrink-0 text-primary" /><span>{item}</span></li>)}</ul></Card>
+            <Card className="p-5"><h3 className="font-display text-base font-bold text-ink">Conditions importantes</h3><ul className="mt-3 space-y-2">{contract.important_conditions?.map((item) => <li key={item} className="flex items-start gap-2 text-sm leading-6 text-muted"><FileCheck2 aria-hidden="true" className="mt-1 size-4 shrink-0 text-action" /><span>{item}</span></li>)}</ul></Card>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => window.print()}
-              className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors"
-              title="Imprimer le contrat"
-            >
-              <Printer className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-600 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+
+          <section aria-labelledby="contract-document-title">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div><h3 id="contract-document-title" className="font-display text-lg font-bold text-ink">Document à relire</h3><p className="mt-1 text-sm text-muted">Contenu généré par FastAPI à partir de la réservation confirmée.</p></div>
+              <div className="flex items-center gap-2">
+                <Languages aria-hidden="true" className="size-4 text-muted" />
+                {availableLanguages.map((code) => <Button key={code} size="sm" variant={language === code ? 'primary' : 'secondary'} onClick={() => setLanguage(code)}>{code === 'ar' ? 'العربية' : 'Français'}</Button>)}
+              </div>
+            </div>
+            <Card className="mt-3 p-5 sm:p-6">
+              <pre dir={language === 'ar' ? 'rtl' : 'ltr'} className="whitespace-pre-wrap font-serif text-sm leading-7 text-ink">{contractText}</pre>
+              <div className="mt-5 border-t border-border pt-4 text-xs text-muted"><p>Empreinte du contenu : <span className="break-all font-mono">{contract.contract_sha256}</span></p><p className="mt-1">Référence juridique déclarée : {contract.applicable_law}</p></div>
+            </Card>
+          </section>
+
+          <section aria-labelledby="contract-signatures-title">
+            <h3 id="contract-signatures-title" className="font-display text-lg font-bold text-ink">Statut des parties</h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Card className="flex items-center justify-between gap-3 p-4"><div><p className="text-xs font-bold text-muted">Propriétaire</p><p className="mt-1 text-sm font-bold text-ink">{contract.owner?.name}</p></div><Badge variant={ownerSignature.tone}>{ownerSignature.label}</Badge></Card>
+              <Card className="flex items-center justify-between gap-3 p-4"><div><p className="text-xs font-bold text-muted">Locataire</p><p className="mt-1 text-sm font-bold text-ink">{contract.renter?.name}</p></div><Badge variant={renterSignature.tone}>{renterSignature.label}</Badge></Card>
+            </div>
+            {contract.signature_available && !contract.completed && (
+              <Card className="mt-4 p-5">
+                <Checkbox checked={consented} onChange={(event) => setConsented(event.target.checked)} label="J’ai lu le contrat et j’en accepte le contenu" description="Cette confirmation sera envoyée au prestataire de signature configuré." />
+                {signError && <p role="alert" className="mt-3 text-sm font-semibold text-error">{signError}</p>}
+                <Button className="mt-4" disabled={!consented} loading={signing} loadingLabel="Enregistrement…" onClick={acceptContract}>Accepter et signer</Button>
+              </Card>
+            )}
+          </section>
+
+          <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end">
+            <Button variant="secondary" onClick={onClose}>Fermer</Button>
+            <Button variant="secondary" onClick={() => window.print()}><Printer aria-hidden="true" className="size-4" /> Imprimer</Button>
+            <Button variant="secondary" onClick={downloadText}><Download aria-hidden="true" className="size-4" /> Télécharger le texte</Button>
+            {contract.document_url && contract.completed && <Button onClick={() => window.open(contract.document_url, '_blank', 'noopener,noreferrer')}><FileText aria-hidden="true" className="size-4" /> Ouvrir le document final</Button>}
+            {!contract.completed && <Button variant="ghost" onClick={() => loadContract()}><RefreshCw aria-hidden="true" className="size-4" /> Actualiser</Button>}
           </div>
         </div>
-
-        {/* Contract Printable Area */}
-        <div className="overflow-y-auto py-6 pr-2 space-y-6 text-xs text-stone-700 leading-relaxed font-serif">
-          
-          {/* Header Banner */}
-          <div className="text-center border-b border-stone-200 pb-4">
-            <img src="/logo.png" alt="Lokiini Maroc" className="h-10 w-auto mx-auto mb-2 object-contain" />
-            <h2 className="text-base font-bold uppercase tracking-widest text-stone-900 font-sans">
-              ROYAUME DU MAROC — CONTRAT DE LOCATION DE MATÉRIEL
-            </h2>
-            <div className="text-[11px] text-stone-500 font-mono mt-1">
-              Réf : <span className="font-bold text-stone-800">{contract?.contract_reference}</span> | Date : {contract?.contract_date}
-            </div>
-            <div className="inline-block bg-teal-50 text-lokiini-teal text-[10px] font-bold px-3 py-0.5 rounded-full mt-2 font-sans border border-teal-200">
-              Scellé par Signature Électronique Dématérialisée (Loi n° 53-05)
-            </div>
-          </div>
-
-          {/* Parties Box */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-sans text-xs">
-            <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-1">
-              <h4 className="font-bold text-stone-900 uppercase text-[10px] tracking-wider text-lokiini-teal">
-                LE LOUEUR (Propriétaire)
-              </h4>
-              <div className="font-bold text-stone-900">{contract?.owner_name}</div>
-              <div className="text-stone-600">{contract?.owner_company}</div>
-              <div className="text-stone-500 text-[11px]">ICE : {contract?.owner_ice}</div>
-            </div>
-
-            <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-1">
-              <h4 className="font-bold text-stone-900 uppercase text-[10px] tracking-wider text-lokiini-terracotta">
-                LE PRENEUR (Locataire)
-              </h4>
-              <div className="font-bold text-stone-900">{contract?.renter_name}</div>
-              <div className="text-stone-600">CIN : {contract?.renter_cin} (Certifiée CNDP)</div>
-              <div className="text-stone-500 text-[11px]">Tél : {contract?.renter_phone}</div>
-            </div>
-          </div>
-
-          {/* Financials Table */}
-          <div className="font-sans">
-            <table className="w-full text-left border-collapse border border-stone-200 text-xs">
-              <thead className="bg-stone-100 text-stone-700">
-                <tr>
-                  <th className="p-2.5 border border-stone-200">Désignation du Matériel</th>
-                  <th className="p-2.5 border border-stone-200">Période</th>
-                  <th className="p-2.5 border border-stone-200">Total Location TTC</th>
-                  <th className="p-2.5 border border-stone-200">Caution Séquestrée (CMI)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="p-2.5 border border-stone-200 font-bold">{contract?.equipment_title}</td>
-                  <td className="p-2.5 border border-stone-200">{contract?.rental_period}</td>
-                  <td className="p-2.5 border border-stone-200 font-black text-lokiini-teal">{contract?.total_rental_mad} MAD</td>
-                  <td className="p-2.5 border border-stone-200 font-black text-lokiini-terracotta">{contract?.cmi_deposit_hold_mad} MAD</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Articles & Clauses */}
-          <div className="space-y-2.5">
-            <h4 className="font-bold text-stone-900 font-sans text-xs uppercase tracking-wider">
-              Clauses & Conditions Générales du Dahir des Obligations et Contrats
-            </h4>
-            {contract?.legal_clauses?.map((clause, idx) => (
-              <p key={idx} className="text-stone-600 text-justify text-[11px] leading-relaxed">
-                {clause}
-              </p>
-            ))}
-          </div>
-
-          {/* Cryptographic Seal Footprint */}
-          <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 font-mono text-[10px] text-stone-500 space-y-1">
-            <div className="flex items-center gap-1 font-bold text-emerald-700 font-sans text-xs mb-1">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Empreinte Cryptographique d'Horodatage SHA-256</span>
-            </div>
-            <div className="truncate text-stone-800 font-bold">{contract?.sha256_seal}</div>
-            <div>Jeton CMI : {contract?.cmi_auth_token}</div>
-          </div>
-
-        </div>
-
-        {/* Footer */}
-        <div className="pt-4 border-t border-stone-200 flex justify-end gap-3 shrink-0">
-          <button
-            onClick={onClose}
-            className="bg-lokiini-teal hover:bg-lokiini-teal-dark text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow text-xs"
-          >
-            Fermer
-          </button>
-        </div>
-
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 }

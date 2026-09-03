@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import EquipmentGrid from './components/EquipmentGrid';
+import { HowLokiiniWorks, OwnerCallToAction, TrustSafetySection } from './components/HomeSections';
+import CatalogueExperience from './components/CatalogueExperience';
 import EquipmentModal from './components/EquipmentModal';
-import OwnerDashboard from './components/OwnerDashboard';
+import AccountDashboard from './components/AccountDashboard';
 import KYCVerificationModal from './components/KYCVerificationModal';
 import AddEquipmentModal from './components/AddEquipmentModal';
 import InspectionModal from './components/InspectionModal';
@@ -12,40 +13,92 @@ import AuthModal from './components/AuthModal';
 import GeoCitiesSection from './components/GeoCitiesSection';
 import PricingSection from './components/PricingSection';
 import FAQSection from './components/FAQSection';
-import { INITIAL_EQUIPMENT } from './data/mockData';
-import { getEquipmentList, getCurrentUser } from './services/api';
+import { Footer, Container, PageShell } from './components/layout';
+import { Breadcrumb, Button, Card } from './components/ui';
+import { getEquipmentCategories, getEquipmentPage } from './services/api';
 import { subscribeToAuthState, logoutUser } from './services/firebase';
-import { ShieldCheck, Lock, FileText, PhoneCall } from 'lucide-react';
+import { Lock } from 'lucide-react';
+import { useI18n } from './i18n';
+
+const CATEGORY_LABELS = {
+  tools: 'Outils & bricolage',
+  btp: 'BTP & chantier',
+  audiovisual: 'Photo & audiovisuel',
+  audiovisuel: 'Photo & audiovisuel',
+  event: 'Événementiel',
+  evenementiel: 'Événementiel',
+  outdoor: 'Plein air & camping',
+  cleaning: 'Nettoyage & entretien',
+  energy: 'Énergie',
+  transport: 'Transport',
+  vehicles: 'Véhicules',
+  hightech: 'High-tech',
+  medical: 'Matériel médical',
+};
+
+const categoryLabel = (category) => CATEGORY_LABELS[category] || category.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+
+const PAGE_SIZE = 12;
+
+function readCatalogueFilters() {
+  const params = new URLSearchParams(window.location.search);
+  const numberOrNull = (key) => {
+    const value = params.get(key);
+    if (value === null || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+  };
+  return {
+    search: params.get('q') || '',
+    category: params.get('category') || 'all',
+    city: params.get('city') || 'Toutes les villes',
+    prix_min: numberOrNull('min_price'),
+    prix_max: numberOrNull('max_price'),
+    verified: params.get('verified') === 'true',
+    available: params.get('available') !== 'false',
+    radius: numberOrNull('radius') || 25,
+    position: null,
+  };
+}
+
+function catalogueErrorMessage(error) {
+  if (error?.status === 502 || error?.status === 503 || error?.status === 504 || error?.code === 'NETWORK_ERROR') {
+    return 'Le catalogue est temporairement indisponible. Réessayez dans quelques instants.';
+  }
+  if (error?.code === 'REQUEST_TIMEOUT') {
+    return 'Le catalogue met trop de temps à répondre. Vérifiez votre connexion puis réessayez.';
+  }
+  return error?.message || 'Impossible de charger le catalogue.';
+}
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('catalog'); // 'catalog' | 'dashboard'
-  const [selectedCity, setSelectedCity] = useState('Toutes les villes');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const { t } = useI18n();
+  const [currentView, setCurrentView] = useState(() => (
+    window.location.hash.startsWith('#account-') ? 'dashboard' : 'catalog'
+  )); // 'catalog' | 'dashboard' | 'pricing'
+  const [catalogueFilters, setCatalogueFilters] = useState(readCatalogueFilters);
   
-  const [equipmentList, setEquipmentList] = useState(INITIAL_EQUIPMENT);
+  const [equipmentList, setEquipmentList] = useState([]);
+  const [catalogueLoading, setCatalogueLoading] = useState(true);
+  const [catalogueLoadingMore, setCatalogueLoadingMore] = useState(false);
+  const [catalogueTotal, setCatalogueTotal] = useState(null);
+  const [catalogueHasMore, setCatalogueHasMore] = useState(false);
+  const [homepageCategories, setHomepageCategories] = useState([]);
+  const [homepageCities, setHomepageCities] = useState([]);
+  const [catalogueError, setCatalogueError] = useState(null);
+  const catalogueRequestRef = useRef(0);
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [equipmentModalMode, setEquipmentModalMode] = useState('details');
   
   // User Session & KYC
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('lokiini_user') : null;
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [isKYCVerified, setIsKYCVerified] = useState(() => {
-    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('lokiini_user') : null;
-    if (!saved) return false;
-    try {
-      const parsed = JSON.parse(saved);
-      return Boolean(parsed.is_kyc_verified);
-    } catch {
-      return false;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isKYCVerified, setIsKYCVerified] = useState(false);
+  const [sessionError, setSessionError] = useState(null);
 
   // Modals visibility states
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
   const [isAddEquipmentOpen, setIsAddEquipmentOpen] = useState(false);
+  const [accountRefreshKey, setAccountRefreshKey] = useState(0);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   
   // Contract Viewer Modal
@@ -56,45 +109,122 @@ export default function App() {
   const [inspectionModalData, setInspectionModalData] = useState(null);
   const [inspectionType, setInspectionType] = useState('check_in');
 
-  // Fetch from FastAPI backend with fallback
-  const loadCatalogue = async () => {
-    const apiData = await getEquipmentList({
-      city: selectedCity,
-      category: selectedCategory,
-      search: searchTerm
+  // The catalogue is authoritative from FastAPI; failures are shown to the user.
+  const changeCatalogueFilters = useCallback((changes) => {
+    setCatalogueFilters((current) => ({ ...current, ...changes }));
+  }, []);
+
+  const resetCatalogueFilters = useCallback(() => {
+    setCatalogueFilters({
+      search: '', category: 'all', city: 'Toutes les villes', prix_min: null,
+      prix_max: null, verified: false, available: true, radius: 25, position: null,
     });
-    if (apiData && apiData.length > 0) {
-      const mapped = apiData.map(item => ({
+  }, []);
+
+  const loadCatalogue = useCallback(async ({ append = false, offset = 0, signal } = {}) => {
+    const requestNumber = append ? catalogueRequestRef.current : catalogueRequestRef.current + 1;
+    if (!append) catalogueRequestRef.current = requestNumber;
+    if (append) setCatalogueLoadingMore(true);
+    else setCatalogueLoading(true);
+    setCatalogueError(null);
+    try {
+      const page = await getEquipmentPage({
+        ...catalogueFilters,
+        lat: catalogueFilters.position?.lat,
+        lng: catalogueFilters.position?.lng,
+        radius_km: catalogueFilters.radius,
+        limit: PAGE_SIZE,
+        offset,
+      }, { signal });
+      const mapped = page.items.map(item => ({
         ...item,
-        rating: item.rating || 4.9,
-        reviews_count: item.reviews_count || 15,
-        image: item.images_urls?.[0] || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800',
+        rating: item.rating ?? null,
+        reviews_count: item.reviews_count ?? null,
+        image: item.photos?.[0] || item.images_urls?.[0] || null,
+        is_verified: item.loueur_statut_kyc === 'verified' || item.is_verified === true,
         specs: item.specs_json || item.specs || {}
       }));
-      setEquipmentList(mapped);
-    } else {
-      // Local filtered fallback
-      const local = INITIAL_EQUIPMENT.filter((item) => {
-        const matchCity = selectedCity === 'Toutes les villes' || item.city.toLowerCase() === selectedCity.toLowerCase();
-        const matchCategory = selectedCategory === 'all' || item.category === selectedCategory;
-        const matchSearch = searchTerm === '' || item.title.toLowerCase().includes(searchTerm.toLowerCase()) || item.description.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchCity && matchCategory && matchSearch;
-      });
-      setEquipmentList(local);
+      if (!append && requestNumber !== catalogueRequestRef.current) return;
+      setEquipmentList((current) => append
+        ? [...new Map([...current, ...mapped].map((item) => [item.id, item])).values()]
+        : mapped);
+      const loadedCount = offset + mapped.length;
+      setCatalogueTotal(page.total);
+      setCatalogueHasMore(page.total != null ? loadedCount < page.total : mapped.length === PAGE_SIZE);
+      setHomepageCities((current) => [...new Set([...current, ...mapped.map((item) => item.city).filter(Boolean)])]
+        .sort((left, right) => left.localeCompare(right, 'fr')));
+    } catch (error) {
+      if (error.name === 'AbortError' || error.code === 'REQUEST_CANCELLED') return;
+      if (!append && requestNumber !== catalogueRequestRef.current) return;
+      if (!append) setEquipmentList([]);
+      setCatalogueError(catalogueErrorMessage(error));
+    } finally {
+      if (append) setCatalogueLoadingMore(false);
+      else if (requestNumber === catalogueRequestRef.current) setCatalogueLoading(false);
     }
-  };
+  }, [catalogueFilters]);
 
   useEffect(() => {
-    loadCatalogue();
-  }, [selectedCity, selectedCategory, searchTerm]);
+    const controller = new AbortController();
+    loadCatalogue({ signal: controller.signal });
+    return () => controller.abort();
+  }, [catalogueFilters, loadCatalogue]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await getEquipmentCategories();
+        const rows = response?.donnees ?? response ?? [];
+        setHomepageCategories(rows.map((item) => ({
+          id: item.categorie ?? item.category ?? item.id,
+          label: item.nom_affiche || categoryLabel(item.categorie ?? item.category ?? item.id),
+        })).filter((item) => item.id));
+      } catch {
+        // The catalogue remains usable; category discovery is an optional facet.
+      }
+    };
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (catalogueFilters.search) params.set('q', catalogueFilters.search);
+    if (catalogueFilters.category !== 'all') params.set('category', catalogueFilters.category);
+    if (catalogueFilters.city !== 'Toutes les villes') params.set('city', catalogueFilters.city);
+    if (catalogueFilters.prix_min != null) params.set('min_price', catalogueFilters.prix_min);
+    if (catalogueFilters.prix_max != null) params.set('max_price', catalogueFilters.prix_max);
+    if (catalogueFilters.verified) params.set('verified', 'true');
+    if (!catalogueFilters.available) params.set('available', 'false');
+    if (catalogueFilters.position) params.set('radius', catalogueFilters.radius);
+    const query = params.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+  }, [catalogueFilters]);
 
   const handleSelectEquipment = (item, mode) => {
     setSelectedEquipment(item);
     setEquipmentModalMode(mode);
   };
 
-  const handleEquipmentAdded = (newItem) => {
-    setEquipmentList(prev => [newItem, ...prev]);
+  const handleEquipmentAdded = () => {
+    loadCatalogue();
+    setAccountRefreshKey((current) => current + 1);
+  };
+
+  const navigate = (view) => {
+    setCurrentView(view);
+    if (view === 'dashboard') {
+      if (!window.location.hash.startsWith('#account-')) {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#account-overview`);
+      }
+    } else if (window.location.hash.startsWith('#account-')) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleRentOut = () => {
+    if (currentUser) setIsAddEquipmentOpen(true);
+    else setIsAuthModalOpen(true);
   };
 
   const handleOpenContract = (bookingId, bookingData) => {
@@ -110,27 +240,40 @@ export default function App() {
   // Listen to Firebase authentication state
   useEffect(() => {
     const unsubscribe = subscribeToAuthState((user) => {
-      if (user) {
-        setCurrentUser(user);
-      }
-    });
+      setCurrentUser(user);
+      setIsKYCVerified(user?.statut_verification === 'verified');
+      setSessionError(null);
+    }, (error) => setSessionError(`Session API indisponible : ${error.message}`));
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);
 
   const handleLogout = async () => {
-    await logoutUser();
-    setCurrentUser(null);
+    setSessionError(null);
+    try {
+      await logoutUser();
+      setCurrentUser(null);
+    } catch (error) {
+      setSessionError(`Déconnexion API incomplète : ${error.message}`);
+    }
   };
+
+  const handleKYCStatusChange = useCallback((status) => {
+    setCurrentUser((user) => {
+      if (!user || user.statut_verification === status) return user;
+      return { ...user, statut_verification: status };
+    });
+    setIsKYCVerified(status === 'verified');
+  }, []);
 
   // Dynamic SEO & GEO Page Metadata
   useEffect(() => {
-    let title = "Lokiini — N°1 Location de Tout Matériel & Équipements au Maroc";
-    if (selectedCity && selectedCity !== 'Toutes les villes') {
-      title = `Location de Matériel & Équipements à ${selectedCity} — Lokiini Maroc`;
+    let title = "Lokiini — Location de matériel au Maroc";
+    if (catalogueFilters.city && catalogueFilters.city !== 'Toutes les villes') {
+      title = `Location de Matériel & Équipements à ${catalogueFilters.city} — Lokiini Maroc`;
     }
-    if (selectedCategory && selectedCategory !== 'all') {
+    if (catalogueFilters.category && catalogueFilters.category !== 'all') {
       const catNames = {
         'event': 'Matériel Événementiel & Fêtes',
         'audiovisual': 'Matériel Audiovisuel, Photo & Drones',
@@ -141,13 +284,13 @@ export default function App() {
         'hightech': 'High-Tech, Gaming & Informatique',
         'medical': 'Matériel Médical & Soins'
       };
-      title = `Location ${catNames[selectedCategory] || 'Matériel'} au Maroc — Lokiini`;
+      title = `Location ${catNames[catalogueFilters.category] || categoryLabel(catalogueFilters.category)} au Maroc — Lokiini`;
     }
     document.title = title;
-  }, [selectedCity, selectedCategory]);
+  }, [catalogueFilters.city, catalogueFilters.category]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-lokiini-sand">
+    <div className="flex min-h-screen flex-col bg-lokiini-sand pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">
       
       {/* 1. Header Navigation */}
       <Navbar
@@ -162,52 +305,61 @@ export default function App() {
       />
 
       {/* 2. Main Body View */}
-      <main className="flex-1">
+      <main id="main-content" tabIndex="-1" className="flex-1 focus:outline-none">
+        {sessionError && (
+          <Container size="lg" className="pt-4"><div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{sessionError}</div></Container>
+        )}
         {currentView === 'catalog' ? (
           <>
             {/* Hero & Search Bar */}
             <Hero
-              selectedCity={selectedCity}
-              setSelectedCity={setSelectedCity}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
+              selectedCity={catalogueFilters.city}
+              setSelectedCity={(city) => changeCatalogueFilters({ city })}
+              searchTerm={catalogueFilters.search}
+              setSearchTerm={(search) => changeCatalogueFilters({ search })}
+              onRentOut={handleRentOut}
             />
 
-            {/* Equipment Grid */}
-            <EquipmentGrid
+            <CatalogueExperience
               equipmentList={equipmentList}
+              total={catalogueTotal}
+              categories={homepageCategories}
+              filters={catalogueFilters}
+              onChangeFilters={changeCatalogueFilters}
+              onResetFilters={resetCatalogueFilters}
               onSelectEquipment={handleSelectEquipment}
+              loading={catalogueLoading}
+              loadingMore={catalogueLoadingMore}
+              hasMore={catalogueHasMore}
+              error={catalogueError}
+              onRetry={() => loadCatalogue()}
+              onLoadMore={() => loadCatalogue({ append: true, offset: equipmentList.length })}
             />
 
-            {/* Moroccan Regional Hubs (GEO Targeting) */}
             <GeoCitiesSection
-              selectedCity={selectedCity}
+              cities={homepageCities}
+              selectedCity={catalogueFilters.city}
               onSelectCity={(city) => {
-                setSelectedCity(city);
-                window.scrollTo({ top: 380, behavior: 'smooth' });
+                changeCatalogueFilters({ city });
+                requestAnimationFrame(() => document.getElementById('catalogue-grid')?.scrollIntoView({ behavior: 'smooth' }));
               }}
             />
 
-            {/* Subscription & Pricing Plans */}
-            <PricingSection
-              onSelectPlan={(planId) => {
-                if (currentUser) {
-                  setCurrentView('dashboard');
-                } else {
-                  setIsAuthModalOpen(true);
-                }
-              }}
-              onOpenAuth={() => setIsAuthModalOpen(true)}
-            />
-
-            {/* GEO Generative Engine Optimization & FAQ */}
+            <HowLokiiniWorks />
+            <TrustSafetySection />
+            <OwnerCallToAction onRentOut={handleRentOut} />
             <FAQSection />
           </>
         ) : currentView === 'pricing' ? (
           /* Dedicated Pricing View */
-          <div className="py-8 bg-stone-50 min-h-[80vh]">
+          <PageShell className="bg-stone-50">
+            <Container className="mb-2">
+              <Breadcrumb items={[{
+                label: t('nav.browseShort'),
+                href: '#catalogue',
+                onClick: (event) => { event.preventDefault(); navigate('catalog'); },
+              }, { label: t('nav.pricing') }]} />
+            </Container>
             <PricingSection
               onSelectPlan={(planId) => {
                 if (currentUser) {
@@ -219,105 +371,83 @@ export default function App() {
               onOpenAuth={() => setIsAuthModalOpen(true)}
             />
             <FAQSection />
-          </div>
+          </PageShell>
         ) : currentUser ? (
-          /* Pro Loueur Dashboard */
-          <OwnerDashboard
+          /* One account for renting and owning */
+          <AccountDashboard
             onNewEquipment={() => setIsAddEquipmentOpen(true)}
             onOpenContract={handleOpenContract}
             onOpenInspection={handleOpenInspection}
+            onOpenKYC={() => setIsKYCModalOpen(true)}
+            onNavigate={navigate}
             currentUser={currentUser}
+            refreshKey={accountRefreshKey}
+            onUserUpdated={(user) => {
+              setCurrentUser(user);
+              setIsKYCVerified(user?.statut_verification === 'verified');
+            }}
           />
         ) : (
           /* Non-authenticated Dashboard Gate */
-          <div className="py-16 bg-stone-50 min-h-[70vh] flex items-center justify-center px-4">
-            <div className="bg-white rounded-3xl p-8 max-w-lg w-full text-center border border-stone-200 shadow-xl space-y-5">
+          <PageShell className="bg-stone-50">
+            <Container size="md">
+              <Breadcrumb items={[{
+                label: t('nav.browseShort'),
+                href: '#catalogue',
+                onClick: (event) => { event.preventDefault(); navigate('catalog'); },
+              }, { label: t('nav.dashboard') }]} className="mb-8" />
+              <Card className="mx-auto max-w-lg space-y-5 p-7 text-center sm:p-8">
               <div className="w-16 h-16 bg-emerald-50 text-lokiini-teal rounded-2xl flex items-center justify-center mx-auto shadow-inner">
                 <Lock className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-black text-lokiini-charcoal font-['Outfit']">
-                Espace Réservé aux Loueurs Pro
-              </h2>
-              <p className="text-xs text-stone-500 leading-relaxed">
-                Connectez-vous avec votre compte Firebase ou créez un compte Loueur Professionnel pour gérer votre matériel en location (événementiel, audiovisuel, outillage, high-tech, véhicules, BTP), suivre les baux DOC et vos cautions CMI.
+              <h1 className="font-display text-2xl font-bold text-ink">
+                {t('dashboard.gateTitle')}
+              </h1>
+              <p className="text-sm leading-6 text-muted">
+                {t('dashboard.gateDescription')}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <button
+                <Button
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="flex-1 bg-lokiini-teal hover:bg-lokiini-teal-dark text-white font-bold py-3 px-4 rounded-xl text-xs transition-all shadow"
+                  className="flex-1"
                 >
-                  Se Connecter avec Firebase
-                </button>
-                <button
-                  onClick={() => setCurrentView('pricing')}
-                  className="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold py-3 px-4 rounded-xl text-xs transition-all border border-stone-200"
+                  {t('footer.signIn')}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate('catalog')}
+                  className="flex-1"
                 >
-                  Voir la Grille Tarifaire
-                </button>
+                  {t('nav.browse')}
+                </Button>
               </div>
-            </div>
-          </div>
+              </Card>
+            </Container>
+          </PageShell>
         )}
       </main>
 
-      {/* 3. Footer with Moroccan Legal & Trust Footprint */}
-      <footer className="bg-lokiini-charcoal text-stone-400 text-xs py-12 border-t border-stone-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="bg-white/95 p-1 rounded-lg border border-stone-700">
-                <img src="/logo.png" alt="Lokiini Logo" className="h-7 w-auto object-contain" />
-              </div>
-            </div>
-            <p className="text-stone-400 text-xs leading-relaxed">
-              Plateforme universelle de location de matériel et d'équipements de confiance au Royaume du Maroc.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold mb-3">Conformité Marocaine</h4>
-            <ul className="space-y-2 text-stone-400">
-              <li className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-lokiini-teal" /> CNDP (Loi n° 09-08)</li>
-              <li className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-lokiini-teal" /> Contrats DOC (Art. 627+)</li>
-              <li className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-lokiini-teal" /> Signature Loi n° 53-05</li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold mb-3">Paiement & Cautions</h4>
-            <ul className="space-y-2 text-stone-400">
-              <li>Passerelle CMI / Payzone 3D-Secure</li>
-              <li>Réseau CashPlus / Wafacash</li>
-              <li>Caution séquestrée non débitée</li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold mb-3">Assistance & Contact</h4>
-            <p className="text-stone-400 mb-2">Conseiller WhatsApp 7j/7 pour artisans et professionnels au Maroc.</p>
-            <div className="flex items-center gap-2 text-lokiini-teal font-bold">
-              <PhoneCall className="w-4 h-4" />
-              <span>+212 5 22 00 00 00</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 border-t border-stone-800 text-center text-stone-500">
-          © {new Date().getFullYear()} Lokiini Maroc. Tous droits réservés. Architecture 100% Conteneurisée Docker.
-        </div>
-      </footer>
+      <Footer
+        currentUser={currentUser}
+        onNavigate={navigate}
+        onRentOut={handleRentOut}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+      />
 
       {/* 4. Equipment Details & Booking Modal */}
       {selectedEquipment && (
         <EquipmentModal
           equipment={selectedEquipment}
           initialMode={equipmentModalMode}
+          isAuthenticated={Boolean(currentUser)}
           isKYCVerified={isKYCVerified}
           onOpenKYC={() => setIsKYCModalOpen(true)}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
           onClose={() => setSelectedEquipment(null)}
           onBookingSuccess={() => loadCatalogue()}
           onOpenContract={handleOpenContract}
           onOpenInspection={handleOpenInspection}
+          onSelectSimilar={(item) => setSelectedEquipment(item)}
         />
       )}
 
@@ -325,7 +455,8 @@ export default function App() {
       <KYCVerificationModal
         isOpen={isKYCModalOpen}
         onClose={() => setIsKYCModalOpen(false)}
-        onVerificationSuccess={() => setIsKYCVerified(true)}
+        currentUser={currentUser}
+        onStatusChange={handleKYCStatusChange}
       />
 
       {/* 6. Add Equipment Modal (Pro Owner) */}
@@ -335,14 +466,18 @@ export default function App() {
         onEquipmentAdded={handleEquipmentAdded}
       />
 
-      {/* 7. Contradictory Inspection Modal */}
+      {/* 7. Check-in / check-out inspection */}
       {inspectionModalData && (
         <InspectionModal
           isOpen={!!inspectionModalData}
           onClose={() => setInspectionModalData(null)}
           booking={inspectionModalData}
           type={inspectionType}
-          onInspectionSuccess={() => loadCatalogue()}
+          currentUser={currentUser}
+          onInspectionSuccess={() => {
+            setAccountRefreshKey((value) => value + 1);
+            loadCatalogue();
+          }}
         />
       )}
 
@@ -353,6 +488,7 @@ export default function App() {
           onClose={() => setViewingContractBookingId(null)}
           bookingId={viewingContractBookingId}
           bookingData={viewingContractData}
+          onContractUpdated={() => setAccountRefreshKey((value) => value + 1)}
         />
       )}
 
@@ -360,7 +496,10 @@ export default function App() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        onAuthSuccess={(user) => setCurrentUser(user)}
+        onAuthSuccess={(user) => {
+          setCurrentUser(user);
+          setIsKYCVerified(user?.statut_verification === 'verified');
+        }}
       />
 
     </div>

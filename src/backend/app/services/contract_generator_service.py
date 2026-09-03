@@ -1,6 +1,21 @@
 import hashlib
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
+
+
+PAYMENT_METHOD_LABELS = {
+    "cash_cod": "Paiement en espèces à la remise",
+    "cash_on_delivery": "Paiement en espèces à la remise",
+    "cmi_card": "Paiement par carte via le prestataire configuré",
+    "cmi": "Paiement par carte via le prestataire configuré",
+    "cashplus": "Paiement via le réseau indiqué dans la réservation",
+}
+
+DEPOSIT_METHOD_LABELS = {
+    "cash": "Dépôt remis en espèces selon les modalités convenues",
+    "authorization": "Autorisation de dépôt auprès du prestataire configuré",
+}
+
 
 class ContractGeneratorService:
     @classmethod
@@ -9,68 +24,78 @@ class ContractGeneratorService:
         booking_data: Dict[str, Any],
         article_data: Dict[str, Any],
         renter_data: Dict[str, Any],
-        owner_data: Dict[str, Any]
+        owner_data: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Génère le texte complet du bail de location conforme aux Articles 627+ du DOC Maroc."""
+        """Generate the French contract text from authoritative reservation data."""
         contract_number = f"BAIL-LOKIINI-{str(booking_data['id'])[:8].upper()}-{datetime.utcnow().year}"
-        
-        owner_id_info = owner_data.get('company_ice') if owner_data.get('company_ice') else (owner_data.get('cin_number') or 'CIN Certifiée Didit')
-        renter_id_info = renter_data.get('company_ice') if renter_data.get('company_ice') else (renter_data.get('cin_number') or 'CIN Certifiée Didit')
+
+        owner_id_info = owner_data.get("company_ice") or owner_data.get("cin_number") or "Non renseigné"
+        renter_id_info = renter_data.get("company_ice") or renter_data.get("cin_number") or "Non renseigné"
+        payment_method = PAYMENT_METHOD_LABELS.get(
+            booking_data.get("payment_method"), "Modalité indiquée dans la réservation"
+        )
+        deposit_method = DEPOSIT_METHOD_LABELS.get(
+            booking_data.get("deposit_method"), "Modalité indiquée dans la réservation"
+        )
+
+        responsibilities = [
+            "Le propriétaire remet le matériel dans l’état et avec les éléments décrits dans le contrat.",
+            "Le locataire utilise le matériel conformément à sa destination et aux règles communiquées.",
+            "Les deux parties vérifient ensemble l’état du matériel lors de la remise et du retour.",
+            "Le locataire restitue le matériel à la date prévue, sous réserve d’un accord différent enregistré entre les parties.",
+        ]
+        important_conditions = [
+            "La période, le prix de location et le dépôt sont ceux enregistrés dans la réservation confirmée.",
+            "Toute sous-location ou cession nécessite l’accord écrit du propriétaire.",
+            "Un désaccord sur l’état du matériel peut être traité à partir des éléments enregistrés lors des inspections.",
+            "Ce document généré ne constitue pas un certificat de signature électronique qualifiée.",
+        ]
 
         contract_text = f"""
-================================================================================
 CONTRAT DE LOCATION DE BIENS MOBILIERS ET D'ÉQUIPEMENTS
-Régit par les Articles 627 et suivants du Dahir formant Code des Obligations et des Contrats (DOC Maroc)
-Référence Contrat : {contract_number}
-================================================================================
+Référence : {contract_number}
+Langue : français
 
-ENTRE LES SOUSSIGNÉS :
+PARTIES
 
-1. LE BAILLEUR (Loueur) :
-- Nom & Prénom / Raison Sociale : {owner_data.get('nom_complet', 'Loueur Lokiini')}
+PROPRIÉTAIRE
+- Nom / raison sociale : {owner_data.get('nom_complet') or 'Non renseigné'}
 - CIN / ICE : {owner_id_info}
-- Téléphone : {owner_data.get('telephone', '+212600000000')}
-- Ville : {owner_data.get('city', 'Casablanca')}
+- Téléphone : {owner_data.get('telephone') or 'Non renseigné'}
+- Ville : {owner_data.get('city') or 'Non renseignée'}
 
-ET
-
-2. LE PRENEUR (Locataire) :
-- Nom & Prénom / Raison Sociale : {renter_data.get('nom_complet', 'Locataire Lokiini')}
+LOCATAIRE
+- Nom / raison sociale : {renter_data.get('nom_complet') or 'Non renseigné'}
 - CIN / ICE : {renter_id_info}
-- Téléphone : {renter_data.get('telephone', '+212600000000')}
-- Ville : {renter_data.get('city', 'Casablanca')}
+- Téléphone : {renter_data.get('telephone') or 'Non renseigné'}
+- Ville : {renter_data.get('city') or 'Non renseignée'}
 
-IL A ÉTÉ CONVENU ET ARRÊTÉ CE QUI SUIT :
+MATÉRIEL
+- Désignation : {article_data.get('titre') or 'Matériel'}
+- Catégorie : {article_data.get('categorie') or 'Non renseignée'}
+- Description : {article_data.get('description') or 'Non renseignée'}
 
-ARTICLE 1 - OBJET DU CONTRAT (Art. 627 DOC)
-Le Bailleur donne en location au Preneur, qui accepte, le matériel désigné ci-après :
-- Désignation : {article_data.get('titre')}
-- Catégorie : {article_data.get('categorie')}
-- Description : {article_data.get('description')}
+PÉRIODE
+- Début : {booking_data.get('date_debut')}
+- Fin : {booking_data.get('date_fin')}
+- Durée enregistrée : {booking_data.get('nombre_jours')} jour(s)
 
-ARTICLE 2 - DURÉE DE LA LOCATION
-La présente location est consentie pour une durée ferme de {booking_data.get('nombre_jours', 1)} jour(s),
-prenant effet le {booking_data.get('date_debut')} et expirant le {booking_data.get('date_fin')}.
+CONDITIONS FINANCIÈRES
+- Prix total de location : {booking_data.get('prix_total')} MAD
+- Modalité de paiement : {payment_method}
+- Dépôt de garantie : {booking_data.get('montant_caution')} MAD
+- Modalité du dépôt : {deposit_method}
 
-ARTICLE 3 - CONDITIONS FINANCIÈRES (PRIX ET PAIEMENT)
-- Loyer Total : {booking_data.get('prix_total')} MAD
-- Mode de Paiement : Cash on Delivery (COD) à la remise
-- Dépôt de Garantie (Caution) : {booking_data.get('montant_caution')} MAD (Remise en espèces à la livraison)
+RESPONSABILITÉS
+{chr(10).join(f'- {item}' for item in responsibilities)}
 
-ARTICLE 4 - OBLIGATIONS DU PRENEUR ET ÉTAT DES LIEUX (Art. 675 & 676 DOC)
-Le Preneur s'engage à user du bien loué en bon père de famille et conformément à sa destination.
-Un état des lieux contradictoire horodaté et scellé par empreinte cryptographique SHA-256 (RFC 3161)
-est dressé au moment du retrait et du retour.
+CONDITIONS IMPORTANTES
+{chr(10).join(f'- {item}' for item in important_conditions)}
 
-ARTICLE 5 - INTERDICTION DE SOUS-LOCATION (Art. 668 DOC)
-Toute sous-location ou cession du présent bail est strictement interdite sans accord écrit du Bailleur.
+DROIT APPLICABLE
+Le contrat se réfère au droit marocain et notamment aux dispositions applicables du Dahir formant Code des obligations et des contrats. En cas de désaccord, les parties conservent les recours prévus par le droit applicable.
 
-ARTICLE 6 - LOI APPLICABLE ET ATTRIBUTION DE JURIDICTION
-Le présent contrat est soumis au droit marocain (Dahir des Obligations et Contrats).
-En cas de litige relatif à l'interprétation ou l'exécution du contrat, compétence expresse est attribuée
-aux juridictions compétentes du Royaume du Maroc.
-
-Fait sous forme électronique certifiée conforme à la Loi n° 53-05 relative à l'échange électronique de données juridiques.
+Document généré électroniquement par Lokiini à partir des informations de la réservation confirmée. La génération et l'empreinte SHA-256 du contenu ne valent pas, à elles seules, signature électronique qualifiée ni certificat de signature.
         """.strip()
 
         contract_hash = hashlib.sha256(contract_text.encode("utf-8")).hexdigest()
@@ -79,8 +104,15 @@ Fait sous forme électronique certifiée conforme à la Loi n° 53-05 relative �
             "contract_number": contract_number,
             "contract_text": contract_text,
             "contract_sha256": contract_hash,
-            "applicable_law": "DOC Maroc (Art. 627+) & Loi 53-05",
-            "generated_at": datetime.utcnow()
+            "applicable_law": "Droit marocain — référence au DOC",
+            "generated_at": datetime.utcnow(),
+            "language": "fr",
+            "available_languages": ["fr"],
+            "responsibilities": responsibilities,
+            "important_conditions": important_conditions,
+            "payment_method_label": payment_method,
+            "deposit_method_label": deposit_method,
         }
+
 
 contract_generator_service = ContractGeneratorService()

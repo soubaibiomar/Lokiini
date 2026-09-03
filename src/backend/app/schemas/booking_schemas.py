@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional, List, Dict, Any
 from datetime import date, datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 class PricingCalculationRequest(BaseModel):
     article_id: uuid.UUID
@@ -30,9 +30,16 @@ class BookingCreateRequest(BaseModel):
     message_loueur: Optional[str] = None
 
 class BookingStatusUpdateRequest(BaseModel):
-    nouveau_statut: str # confirme_cod, en_cours, termine, annule, litige
+    action: Optional[str] = None
+    nouveau_statut: Optional[str] = None  # Legacy compatibility input.
     motif_annulation: Optional[str] = None
     notes_litige: Optional[str] = None
+
+    @model_validator(mode="after")
+    def require_one_transition_input(self):
+        if bool(self.action) == bool(self.nouveau_statut):
+            raise ValueError("Provide exactly one of action or nouveau_statut")
+        return self
 
 class BookingItemResponse(BaseModel):
     id: uuid.UUID
